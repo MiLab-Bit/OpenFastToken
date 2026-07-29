@@ -326,8 +326,8 @@ export function About() {
                   </div>
                   <div className="flex justify-between py-3 border-b border-slate-700">
                     <span className="text-muted-foreground">{t('about.brand.sourceLabel')}</span>
-                    <a href="https://github.com/abc-ai/FastToken" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
-                      https://github.com/abc-ai/FastToken
+                    <a href="https://github.com/MiLab-Bit/OpenFastToken" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                      https://github.com/MiLab-Bit/OpenFastToken
                     </a>
                   </div>
                 </div>

@@ -351,7 +351,7 @@ var upgrader = websocket.Upgrader{
 			return true
 		}
 		// Allow the production domain and local dev origins.
-		if origin == "https://www.abc-ai.cn" || origin == "https://www.abc-ai.cn:443" {
+		if origin == "https://openfasttoken.example" || origin == "https://openfasttoken.example:443" {
 			return true
 		}
 		return false

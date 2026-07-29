@@ -18,7 +18,7 @@ func CORS() gin.HandlerFunc {
 	if allowedOrigins != "" {
 		config.AllowOrigins = strings.Split(allowedOrigins, ",")
 	} else {
-		config.AllowOrigins = []string{"https://www.abc-ai.cn"}
+		config.AllowOrigins = []string{"https://openfasttoken.example"}
 	}
 
 	config.AllowCredentials = true
