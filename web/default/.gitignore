@@ -1,0 +1,34 @@
+# Binaries (compiled artifacts, not source)
+/fasttoken
+*.bak
+*.bak2
+*.bak3
+fasttoken.broken
+fasttoken.old2
+fasttoken.bak_passwordfix
+
+# Frontend build output (regenerated from web/default/src)
+/web/default/dist/
+
+# Secrets & env
+.env
+cert/
+
+# Logs
+logs/
+*.log
+
+# User uploads
+/uploads/
+
+# Leftover SQLite db
+FastToken.db
+
+# Root-level one-off sql (keep migrations/ dir)
+/*.sql
+
+# OS
+.DS_Store
+fasttoken.bak*
+.env.bak.*
+web/default/dist.old/

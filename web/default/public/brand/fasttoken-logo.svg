@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <!-- 主色：深色渐变 -->
+    <linearGradient id="neuralGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2d3436"/>
+      <stop offset="100%" stop-color="#0984e3"/>
+    </linearGradient>
+    <!-- 高亮色 -->
+    <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#74b9ff"/>
+      <stop offset="100%" stop-color="#0984e3"/>
+    </linearGradient>
+    <!-- 背景 -->
+    <linearGradient id="bgGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f8f9fa"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="512" height="512" rx="64" fill="url(#bgGrad2)"/>
+  
+  <!-- 神经网络节点 -->
+  <!-- 中心大节点 -->
+  <circle cx="256" cy="256" r="48" fill="url(#neuralGrad)"/>
+  <text x="256" y="278" text-anchor="middle" 
+        font-family="'SF Pro Display', -apple-system, sans-serif" 
+        font-size="56" font-weight="700" fill="#ffffff">F</text>
+  
+  <!-- 第一圈节点 -->
+  <circle cx="256" cy="136" r="24" fill="url(#nodeGrad)"/>
+  <circle cx="376" cy="196" r="24" fill="url(#nodeGrad)"/>
+  <circle cx="376" cy="316" r="24" fill="url(#nodeGrad)"/>
+  <circle cx="256" cy="376" r="24" fill="url(#nodeGrad)"/>
+  <circle cx="136" cy="316" r="24" fill="url(#nodeGrad)"/>
+  <circle cx="136" cy="196" r="24" fill="url(#nodeGrad)"/>
+  
+  <!-- 连接线 -->
+  <line x1="256" y1="160" x2="256" y2="208" stroke="#74b9ff" stroke-width="3" opacity="0.4"/>
+  <line x1="352" y1="196" x2="304" y2="232" stroke="#74b9ff" stroke-width="3" opacity="0.4"/>
+  <line x1="352" y1="316" x2="304" y2="280" stroke="#74b9ff" stroke-width="3" opacity="0.4"/>
+  <line x1="256" y1="352" x2="256" y2="304" stroke="#74b9ff" stroke-width="3" opacity="0.4"/>
+  <line x1="160" y1="316" x2="208" y2="280" stroke="#74b9ff" stroke-width="3" opacity="0.4"/>
+  <line x1="160" y1="196" x2="208" y2="232" stroke="#74b9ff" stroke-width="3" opacity="0.4"/>
+  
+  <!-- 外圈节点（小） -->
+  <circle cx="196" cy="106" r="12" fill="#dfe6e9"/>
+  <circle cx="316" cy="106" r="12" fill="#dfe6e9"/>
+  <circle cx="406" cy="136" r="12" fill="#dfe6e9"/>
+  <circle cx="406" cy="376" r="12" fill="#dfe6e9"/>
+  <circle cx="316" cy="406" r="12" fill="#dfe6e9"/>
+  <circle cx="196" cy="406" r="12" fill="#dfe6e9"/>
+  <circle cx="106" cy="376" r="12" fill="#dfe6e9"/>
+  <circle cx="106" cy="136" r="12" fill="#dfe6e9"/>
+  
+  <!-- 外圈连接线 -->
+  <line x1="208" y1="112" x2="256" y2="136" stroke="#b2bec3" stroke-width="2" opacity="0.3"/>
+  <line x1="304" y1="112" x2="256" y2="136" stroke="#b2bec3" stroke-width="2" opacity="0.3"/>
+  <line x1="376" y1="172" x2="376" y2="196" stroke="#b2bec3" stroke-width="2" opacity="0.3"/>
+  <line x1="376" y1="340" x2="376" y2="316" stroke="#b2bec3" stroke-width="2" opacity="0.3"/>
+</svg>

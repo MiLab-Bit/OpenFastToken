@@ -1,0 +1,111 @@
+/*
+Copyright (C) 2023-2026 OpenFastToken
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@example.com
+*/
+import { SettingsPage } from '../components/settings-page'
+import type { BillingSettings } from '../types'
+import {
+  BILLING_DEFAULT_SECTION,
+  getBillingSectionContent,
+  getBillingSectionMeta,
+} from './section-registry.tsx'
+
+const defaultBillingSettings: BillingSettings = {
+  QuotaForNewUser: 0,
+  PreConsumedQuota: 0,
+  QuotaForInviter: 0,
+  QuotaForInvitee: 0,
+  TopUpLink: '',
+  'general_setting.docs_link': '',
+  'quota_setting.enable_free_model_pre_consume': true,
+  QuotaPerUnit: 500000,
+  USDExchangeRate: 1,
+  'general_setting.quota_display_type': 'CNY',
+  'general_setting.custom_currency_symbol': '¤',
+  'general_setting.custom_currency_exchange_rate': 1,
+  DisplayInCurrencyEnabled: true,
+  DisplayTokenStatEnabled: true,
+  ModelPrice: '',
+  ModelRatio: '',
+  CacheRatio: '',
+  CreateCacheRatio: '',
+  CompletionRatio: '',
+  ImageRatio: '',
+  AudioRatio: '',
+  AudioCompletionRatio: '',
+  ExposeRatioEnabled: false,
+  'billing_setting.billing_mode': '{}',
+  'billing_setting.billing_expr': '{}',
+  'tool_price_setting.prices': '{}',
+  TopupGroupRatio: '',
+  GroupRatio: '',
+  UserUsableGroups: '',
+  GroupGroupRatio: '',
+  AutoGroups: '',
+  DefaultUseAutoGroup: false,
+  'group_ratio_setting.group_special_usable_group': '{}',
+  PayAddress: '',
+  EpayId: '',
+  EpayKey: '',
+  Price: 7.3,
+  MinTopUp: 1,
+  CustomCallbackAddress: '',
+  PayMethods: '',
+  'payment_setting.amount_options': '',
+  'payment_setting.amount_discount': '',
+  'payment_setting.compliance_confirmed': false,
+  'payment_setting.compliance_terms_version': '',
+  'payment_setting.compliance_confirmed_at': 0,
+  'payment_setting.compliance_confirmed_by': 0,
+  'payment_setting.compliance_confirmed_ip': '',
+  AlipayEnabled: false,
+  AlipayAppId: '',
+  AlipayPrivateKey: '',
+  AlipayPublicKey: '',
+  AlipaySandbox: false,
+  AlipayNotifyUrl: '',
+  AlipayUnitPrice: 1.0,
+  AlipayMinTopUp: 1,
+  AlipaySellerId: '',
+  WechatEnabled: false,
+  WechatAppId: '',
+  WechatMchId: '',
+  WechatApiV3Key: '',
+  WechatPrivateKey: '',
+  WechatSerialNo: '',
+  WechatNotifyUrl: '',
+  WechatUnitPrice: 1.0,
+  WechatMinTopUp: 1,
+  'checkin_setting.enabled': false,
+  'checkin_setting.min_quota': 1000,
+  'checkin_setting.max_quota': 10000,
+  'recharge_gift_setting.enabled': false,
+  'recharge_gift_setting.tiers': '[]',
+  'recharge_gift_setting.gift': '{}',
+}
+
+export function BillingSettings() {
+  return (
+    <SettingsPage
+      routePath='/_authenticated/system-settings/billing/$section'
+      defaultSettings={defaultBillingSettings}
+      defaultSection={BILLING_DEFAULT_SECTION}
+      getSectionContent={getBillingSectionContent}
+      getSectionMeta={getBillingSectionMeta}
+    />
+  )
+}

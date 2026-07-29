@@ -1,0 +1,259 @@
+/*
+Copyright (C) 2023-2026 OpenFastToken
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@example.com
+*/
+import type { TimeGranularity } from '@/lib/time'
+
+// ============================================================================
+// Quota & Usage Data Types
+// ============================================================================
+
+export interface QuotaDataItem {
+  id?: number
+  user_id?: number
+  username?: string
+  model_name?: string
+  created_at: number
+  token_used?: number
+  count?: number
+  quota?: number
+}
+
+// ============================================================================
+// Uptime Monitoring Types
+// ============================================================================
+
+export interface UptimeMonitor {
+  name: string
+  uptime: number
+  status: number
+  group?: string
+}
+
+export interface UptimeGroupResult {
+  categoryName: string
+  monitors: UptimeMonitor[]
+}
+
+// ============================================================================
+// Dashboard Filter Types
+// ============================================================================
+
+export interface DashboardFilters {
+  start_timestamp?: Date
+  end_timestamp?: Date
+  time_granularity?: TimeGranularity
+  username?: string
+}
+
+export type ConsumptionDistributionChartType = 'bar' | 'area'
+
+export type ModelAnalyticsChartTab = 'trend' | 'proportion' | 'top'
+
+export interface DashboardChartPreferences {
+  consumptionDistributionChart: ConsumptionDistributionChartType
+  modelAnalyticsChart: ModelAnalyticsChartTab
+  defaultTimeRangeDays: number
+  defaultTimeGranularity: TimeGranularity
+}
+
+// ============================================================================
+// API Info Types
+// ============================================================================
+
+export interface ApiInfoItem {
+  url: string
+  route: string
+  description: string
+  color: string
+}
+
+export interface PingStatus {
+  latency: number | null
+  testing: boolean
+  error: boolean
+}
+
+export type PingStatusMap = Record<string, PingStatus>
+
+// ============================================================================
+// Chart Types
+// ============================================================================
+
+ 
+type VChartSpec = Record<string, any>
+
+export interface ProcessedChartData {
+  spec_pie: VChartSpec
+  spec_line: VChartSpec
+  spec_area: VChartSpec
+  spec_model_line: VChartSpec
+  spec_rank_bar: VChartSpec
+  totalQuotaDisplay: string
+  totalCountDisplay: string
+}
+
+export interface ProcessedUserChartData {
+  spec_user_rank: VChartSpec
+  spec_user_trend: VChartSpec
+}
+
+// ============================================================================
+// Announcement Types
+// ============================================================================
+
+export interface AnnouncementItem {
+  id?: number
+  content: string
+  publishDate?: string
+  type?: 'default' | 'ongoing' | 'success' | 'warning' | 'error'
+  extra?: string
+}
+
+// ============================================================================
+// FAQ Types
+// ============================================================================
+
+export interface FAQItem {
+  id?: number
+  question: string
+  answer: string
+}
+
+// ============================================================================
+// Flow Visualization Types
+// ============================================================================
+
+export type FlowNodeKind = 'user' | 'node' | 'token' | 'group' | 'model' | 'channel'
+
+export type FlowRole = 'root' | 'admin' | 'user'
+
+export type FlowOverflowMode = 'aggregate' | 'hide'
+
+export type FlowMetric = 'quota' | 'tokens' | 'requests'
+
+export interface FlowNodeFilter {
+  kind: FlowNodeKind
+  id: string
+}
+
+export interface FlowLinkSelection {
+  source: string
+  target: string
+}
+
+export interface FlowQuotaDataItem {
+  quota?: number
+  token_used?: number
+  count?: number
+  user_id?: number
+  username?: string
+  node_name?: string
+  token_id?: number
+  token_name?: string
+  use_group?: string
+  model_name?: string
+  channel_id?: number
+  channel_name?: string
+}
+
+export interface DashboardFlowNode {
+  id: string
+  label: string
+  kind: FlowNodeKind
+  value: number
+  requests: number
+  quota: number
+  tokens: number
+  color: string
+  colorKey: string
+  highlighted?: boolean
+  dimmed?: boolean
+}
+
+export interface DashboardFlowLink {
+  source: string
+  target: string
+  value: number
+  requests: number
+  quota: number
+  tokens: number
+  sourceLabel: string
+  targetLabel: string
+  color: string
+  linkColor: string
+  linkAlpha: number
+  hoverColor: string
+  colorKey: string
+  share: number
+  highlighted?: boolean
+  dimmed?: boolean
+}
+
+export interface DashboardFlowGraph {
+  nodes: DashboardFlowNode[]
+  links: DashboardFlowLink[]
+}
+
+export interface FlowSummary {
+  quota: number
+  tokens: number
+  requests: number
+}
+
+export interface FlowUserFilterOption {
+  value: string
+  label: string
+  valueLabel: string
+  valueRaw: number
+  color: string
+}
+
+export interface FlowNodeFilterOption {
+  kind: FlowNodeKind
+  value: string
+  label: string
+  valueLabel: string
+  valueRaw: number
+  color: string
+}
+
+export interface FlowFilterOptions {
+  users: FlowUserFilterOption[]
+  nodes: FlowNodeFilterOption[]
+}
+
+export interface FlowBuildOptions {
+  role?: FlowRole
+  colorPalette?: readonly string[]
+  visibleStages?: FlowNodeKind[]
+  selectedUsers?: readonly string[]
+  selectedNodes?: readonly FlowNodeFilter[]
+  topNodeLimit?: number
+  overflowMode?: FlowOverflowMode
+  otherNodeLabel?: (kind: FlowNodeKind) => string
+  activeNode?: FlowNodeFilter
+  activeLink?: FlowLinkSelection
+  maskSensitive?: boolean
+  deletedTokenLabel?: (tokenId: number) => string
+}
+
+export interface ProcessedFlowData {
+  summary: FlowSummary
+  flow: DashboardFlowGraph
+  filterOptions: FlowFilterOptions
+}

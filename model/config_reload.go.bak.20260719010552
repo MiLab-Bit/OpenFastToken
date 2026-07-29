@@ -1,0 +1,50 @@
+package model
+
+import (
+	"strconv"
+
+	"www.abc-ai.cn/FastToken/common"
+	"www.abc-ai.cn/FastToken/i18n"
+)
+
+// InitConfigData 在 InitOptionMap 之后调用：把编译期默认值 seed 进数据库（仅首次），
+// 并把数据库中的定价/文案加载进内存，使数据库成为运行时唯一真相源。
+func InitConfigData() {
+	if err := SeedModelPricingFromDefaults(); err != nil {
+		common.SysError("seed model_pricing failed: " + err.Error())
+	}
+	if err := LoadModelPricingIntoRatioSetting(); err != nil {
+		common.SysError("load model_pricing failed: " + err.Error())
+	}
+	if err := ReloadI18nCache(); err != nil {
+		common.SysError("load i18n cache failed: " + err.Error())
+	}
+	// 后端用户面文案走 i18n_messages 表（中文即 key），与前端同一套翻译源、免部署。
+	i18n.SetMessageLoader(TranslateFromDB)
+}
+
+// GetIntOption 从选项表读取整数配置；缺失或非法时返回默认值。
+// 用于把写死的魔法数/开关外部化为可热改的配置项（配置即数据）。
+func GetIntOption(key string, def int) int {
+	if v, ok := common.OptionMap[key]; ok && v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return def
+}
+
+// ReloadAll 免重启热加载所有配置驱动的状态：
+// 选项表（含倍率覆盖）→ 数据库定价表 → 本地化覆盖 → 失效定价缓存。
+// 供管理员「重载配置」端点调用。
+func ReloadAll() error {
+	LoadOptionsFromDatabase()
+	if err := LoadModelPricingIntoRatioSetting(); err != nil {
+		common.SysError("reload model_pricing: " + err.Error())
+	}
+	if err := ReloadI18nCache(); err != nil {
+		common.SysError("reload i18n: " + err.Error())
+	}
+	InvalidatePricingCache()
+	return nil
+}

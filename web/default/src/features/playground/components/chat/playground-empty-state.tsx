@@ -1,0 +1,122 @@
+import { useTranslation } from 'react-i18next'
+/*
+Copyright (C) 2023-2026 OpenFastToken
+
+广场初始引导页 — 提示用户创建API令牌、保持余额
+*/
+import { Key, Wallet, Rocket, Zap, Cloud, Sparkles } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
+type PlaygroundEmptyStateProps = {
+  onSelectPrompt: (prompt: string) => void
+}
+
+export function PlaygroundEmptyState({
+  onSelectPrompt,
+}: PlaygroundEmptyStateProps) {
+  const { t } = useTranslation()
+
+  return (
+    <div className='flex min-h-[min(520px,calc(100svh-18rem))] items-center justify-center px-1 py-8 md:py-12'>
+      <div className='grid w-full max-w-2xl gap-6 text-center'>
+        {/* Icon */}
+        <div className='bg-primary/10 text-primary mx-auto flex size-14 items-center justify-center rounded-2xl border border-primary/20'>
+          <Rocket className='size-7' aria-hidden='true' />
+        </div>
+
+        {/* Title & Description */}
+        <div className='grid gap-3'>
+          <h2 className='text-xl font-bold tracking-tight text-balance md:text-2xl'>{t('欢迎来到 AI 广场')}</h2>
+          <p className='text-muted-foreground mx-auto max-w-lg text-sm leading-7 text-balance'>
+            {t('基于')}{' '}
+            <span className='font-semibold text-foreground'>FastToken</span>
+            {' '}{t('平台，依托')}{' '}
+            <span className='font-semibold text-foreground'>{t('电信天翼云')}</span>
+            {' '}{t('算力网络，为您提供极速稳定的 AI 模型体验。')}
+          </p>
+          <p className='text-muted-foreground mx-auto max-w-lg text-sm leading-7 text-balance'>{t('选择模型，开始与 AI 对话 — 支持文本生成、代码编写、数据分析等丰富能力。')}</p>
+        </div>
+
+        {/* Feature badges */}
+        <div className='mx-auto flex max-w-md flex-wrap justify-center gap-2.5'>
+          {[
+            { icon: Zap, label: t('playground.emptySpeedResponse') },
+            { icon: Cloud, label: t('playground.emptyCloudCompute') },
+            { icon: Sparkles, label: t('playground.emptyMultiModel') },
+          ].map(({ icon: Icon, label }) => (
+            <span
+              key={label}
+              className='inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground'
+            >
+                <Icon className='size-3' />
+                {t(label)}
+              </span>
+          ))}
+        </div>
+
+        {/* Usage guide */}
+        <div className='mx-auto max-w-md rounded-xl border bg-muted/30 p-4 text-left'>
+          <p className='mb-3 text-sm font-medium'>{t('💡 使用前请确保：')}</p>
+          <ul className='space-y-2 text-sm text-muted-foreground'>
+            <li className='flex items-start gap-2'>
+              <Key className='mt-0.5 size-4 shrink-0 text-primary' />
+              <span>{t('已创建 ')}<strong className='text-foreground'>{t('API 令牌')}</strong>{t('（用于身份验证与计费）')}</span>
+            </li>
+            <li className='flex items-start gap-2'>
+              <Wallet className='mt-0.5 size-4 shrink-0 text-primary' />
+              <span>{t('钱包 ')}<strong className='text-foreground'>{t('余额充足')}</strong></span>
+            </li>
+          </ul>
+        </div>
+
+        {/* Action buttons */}
+        <div className='flex flex-col items-center gap-3 sm:flex-row sm:justify-center'>
+          <Button
+            onClick={() => window.location.href = '/keys'}
+            variant='default'
+            size='lg'
+            className='gap-2'
+          >
+            <Key className='size-4' />{t('创建 API 令牌')}</Button>
+          <Button
+            onClick={() => window.location.href = '/wallet'}
+            variant='outline'
+            size='lg'
+            className='gap-2'
+          >
+            <Wallet className='size-4' />{t('前往充值')}</Button>
+          <Button
+            onClick={() => onSelectPrompt(t('你好，请介绍一下你自己'))}
+            variant='secondary'
+            size='lg'
+            className='gap-2'
+          >
+            <Sparkles className='size-4' />{t('开始体验')}</Button>
+        </div>
+
+        {/* Quick prompts at bottom */}
+        <div className='pt-2'>
+          <p className='mb-2 text-xs font-medium text-muted-foreground'>{t('快捷提问：')}</p>
+          <div className='flex flex-wrap justify-center gap-2'>
+            {[
+              '帮我写一段 Python 代码',
+              '分析以下数据趋势',
+              '翻译这段文字为英文',
+              '总结这篇文章的要点',
+            ].map((prompt) => (
+              <Button
+                key={prompt}
+                size='sm'
+                variant='ghost'
+                className='h-8 text-xs'
+                onClick={() => onSelectPrompt(t(prompt))}
+              >
+                {t(prompt)}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,156 @@
+/*
+Copyright (C) 2023-2026 OpenFastToken
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@example.com
+*/
+import { api } from '@/lib/api'
+import type {
+  LoginPayload,
+  LoginResponse,
+  RegisterPayload,
+  ApiResponse,
+} from './types'
+
+// ============================================================================
+// Authentication APIs
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// Login & Logout
+// ----------------------------------------------------------------------------
+
+// User login with username and password
+export async function login(payload: LoginPayload) {
+  const turnstile = payload.turnstile ?? ''
+  const res = await api.post<LoginResponse>(
+    `/api/user/login?turnstile=${turnstile}`,
+    {
+      username: payload.username,
+      password: payload.password,
+    }
+  )
+  return res.data
+}
+
+// User logout
+export async function logout(): Promise<ApiResponse> {
+  const res = await api.post('/api/user/logout')
+  return res.data
+}
+
+// ----------------------------------------------------------------------------
+// Password Management
+// ----------------------------------------------------------------------------
+
+// Send password reset email
+export async function sendPasswordResetEmail(
+  email: string,
+  turnstile?: string
+): Promise<ApiResponse> {
+  const res = await api.get('/api/reset_password', {
+    params: { email, turnstile },
+  })
+  return res.data
+}
+
+// ----------------------------------------------------------------------------
+// OAuth
+// ----------------------------------------------------------------------------
+
+// Get OAuth state for CSRF protection
+export async function getOAuthState(): Promise<string> {
+  const aff =
+    typeof window !== 'undefined' ? (localStorage.getItem('aff') ?? '') : ''
+  const res = await api.get('/api/oauth/state', { params: { aff } })
+  if (res.data?.success) return res.data.data
+  return ''
+}
+
+// WeChat login by authorization code
+export async function wechatLoginByCode(code: string): Promise<ApiResponse> {
+  const res = await api.get('/api/oauth/wechat', { params: { code } })
+  return res.data
+}
+
+// ----------------------------------------------------------------------------
+// Registration
+// ----------------------------------------------------------------------------
+
+// User registration
+export async function register(payload: RegisterPayload): Promise<ApiResponse> {
+  const res = await api.post(`/api/user/register`, payload, {
+    params: { turnstile: payload.turnstile ?? '' },
+  })
+  return res.data
+}
+
+// Send email verification code
+export async function sendEmailVerification(
+  email: string,
+  turnstile?: string
+): Promise<ApiResponse> {
+  const res = await api.get('/api/verification', {
+    params: { email, turnstile },
+  })
+  return res.data
+}
+
+// ----------------------------------------------------------------------------
+// Phone Authentication
+// ----------------------------------------------------------------------------
+
+// Send phone verification code
+export async function sendPhoneCode(
+  phone: string,
+  purpose: string = 'login'
+): Promise<ApiResponse> {
+  const res = await api.post('/api/phone/send_code', { phone, purpose })
+  return res.data
+}
+
+// Phone login with code and optional password
+export async function phoneLogin(payload: {
+  phone: string
+  code: string
+  password?: string
+}): Promise<LoginResponse> {
+  const res = await api.post<LoginResponse>('/api/phone/login', payload)
+  return res.data
+}
+
+// Phone registration
+export async function phoneRegister(payload: {
+  phone: string
+  code: string
+  password: string
+}): Promise<ApiResponse> {
+  const res = await api.post('/api/phone/register', payload)
+  return res.data
+}
+
+// ============================================================================
+// 2FA Login
+// ============================================================================
+
+export interface Login2FAResponse {
+  token?: string
+  [key: string]: unknown
+}
+
+export async function login2fa(data: { code: string; [key: string]: unknown }): Promise<ApiResponse<Login2FAResponse>> {
+  const res = await api.post<ApiResponse<Login2FAResponse>>('/api/user/2fa/login', data)
+  return res.data
+}
