@@ -1,33 +1,39 @@
 # OpenFastToken
 
-> Your tokens. Your pace. Your happy little AI gateway.
+> 你的 Token，用得开心一点。
 
-Tired of juggling a dozen API keys, weird rate limits, and invoices that feel like a boss fight?
-**OpenFastToken** is the open-source way to run a unified AI token gateway that feels *happy*.
+还在为一堆 API Key、乱七八糟的限流、算不清的账单头疼吗？
+**OpenFastToken** 是更哈皮的 AI 中转站 —— 一把钥匙，连上好用的模型；额度清楚，花得明白，用得爽。
 
-## Why people smile after switching
+## 为什么用户会笑出来
 
-- **One token to rule them all** — OpenAI-compatible routes, many models behind one key.
-- **Tokens that feel fair** — clear balance, clear spend, no mystery math at 2am.
-- **Built for builders** — playground, keys, usage logs, rankings — the good stuff you actually open every day.
-- **Pay your way** — top-ups and gifts when you self-host with your own payment rails.
-- **Looks good too** — light skins, multi-language UI, soft on the eyes.
+- **一把 Token 走天下** — 兼容主流调用方式，换模型不用换一整套接入。
+- **额度看得见** — 余额、消耗、账单一眼懂，没有「半夜惊醒查明细」。
+- **速度快、稳得住** — 中转就是要省心：连得上、回得快、少踩坑。
+- **想充就充** — 充值到账干脆，活动赠送偶尔惊喜一下。
+- **界面好看不刺眼** — 浅色皮肤、多语言，日常打开也舒服。
 
-## Get happy tokens in 3 beats
+## 三步开始哈皮
 
-1. **Self-host** this repo (Go backend + modern web UI).
-2. **Plug in** your upstream channels / models.
-3. **Issue tokens** to yourself, your team, or your customers — then ship.
+1. **注册 / 登录** 你的账号  
+2. **充值拿 Token**（或领活动福利）  
+3. **填进你的应用 / 客户端** —— 开聊、开画、开干
 
-Commercial / support: support@example.com
+> 少折腾配置，多留下好用的 Token。
 
-If OpenFastToken made your weekend better, leave a star — it feeds the tiger.
+## 适合谁
 
-## License
+- 想稳定用上好模型的个人创作者  
+- 要给团队统一发钥匙的小公司  
+- 受够了「官网直连不稳 / 贵 / 难开」的你  
 
-AGPL-3.0 — free to use, contribute, and share the love.
-Forked spirit from the New API community; grown into its own happy token house.
+## 现在就试试
+
+打开我们的中转站，领一把开心 Token，先跑通你的第一个请求。  
+用得爽，再告诉朋友 —— 好 Token 值得分享。
+
+联系 / 商务：support@example.com
 
 ---
 
-**OpenFastToken** — less glue code, more token joy.
+**OpenFastToken** — 中转不摆烂，Token 更哈皮。
