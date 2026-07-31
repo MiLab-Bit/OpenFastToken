@@ -1,0 +1,1 @@
+"use strict";(self.rspackChunkfasttoken_web=self.rspackChunkfasttoken_web||[]).push([[6356],{16639(s,e,t){t.r(e),t.d(e,{component:()=>k});var n=t(49547),r=t(71176);let k=function(){return(0,n.jsx)(r.s,{})}}}]);

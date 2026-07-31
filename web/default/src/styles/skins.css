@@ -1,0 +1,228 @@
+/*
+ * FastToken 皮肤（主题）样式
+ * 每个皮肤同时覆盖两类设计令牌：
+ *   1) shadcn 语义变量（bg-background / text-foreground / bg-card / bg-primary …）
+ *      —— 组件真正消费的就是这些，只改 stone 变量会导致“除明暗没差别”。
+ *   2) stone 变量（body 背景、自定义组件）+ 点阵色。
+ * 每个皮肤都提供「亮色 [data-skin=x]」与「暗色 [data-skin=x].dark」两套，
+ * 配色基于 shadcn 无障碍调色板，保证正文/次要文字对比度满足 WCAG AA。
+ * 仅主色相（--primary / 强调色）与背景微染不同，使五套皮肤视觉可区分。
+ */
+
+/* ───────────────────────── neo（默认：冷灰蓝，中性专业） ───────────────────────── */
+[data-skin='neo'] {
+  --background: oklch(0.99 0.003 250);
+  --foreground: oklch(0.18 0.01 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.01 250);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.01 250);
+  --secondary: oklch(0.965 0.004 250);
+  --secondary-foreground: oklch(0.18 0.01 250);
+  --muted: oklch(0.965 0.004 250);
+  --muted-foreground: oklch(0.5 0.012 250);
+  --accent: oklch(0.94 0.008 250);
+  --accent-foreground: oklch(0.18 0.01 250);
+  --border: oklch(0.9 0.005 250);
+  --input: oklch(0.9 0.005 250);
+  --ring: oklch(0.55 0.14 250);
+  --primary: oklch(0.5 0.15 250);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --sidebar: oklch(0.985 0.004 250);
+  --sidebar-foreground: oklch(0.18 0.01 250);
+  --sidebar-primary: oklch(0.5 0.15 250);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.94 0.008 250);
+  --sidebar-accent-foreground: oklch(0.18 0.01 250);
+  --sidebar-border: oklch(0.9 0.005 250);
+  --sidebar-ring: oklch(0.55 0.14 250);
+
+  --chart-1: oklch(0.55 0.15 250);
+  --chart-2: oklch(0.6 0.13 200);
+  --chart-3: oklch(0.6 0.12 300);
+  --chart-4: oklch(0.65 0.14 80);
+  --chart-5: oklch(0.58 0.13 30);
+
+  --color-stone-bg: oklch(0.99 0.003 250);
+  --color-stone-card: oklch(1 0 0);
+  --color-stone-text: oklch(0.18 0.01 250);
+  --color-stone-muted: oklch(0.5 0.012 250);
+  --color-accent-brand: oklch(0.5 0.15 250);
+  --body-grid-color: rgba(15, 23, 42, 0.06);
+}
+
+/* ───────────────────────── aurora（紫罗兰，科技感 / 年轻） ───────────────────────── */
+[data-skin='aurora'] {
+  --background: oklch(0.985 0.012 295);
+  --foreground: oklch(0.2 0.02 295);
+  --card: oklch(0.995 0.01 295);
+  --card-foreground: oklch(0.2 0.02 295);
+  --popover: oklch(0.995 0.01 295);
+  --popover-foreground: oklch(0.2 0.02 295);
+  --secondary: oklch(0.95 0.02 295);
+  --secondary-foreground: oklch(0.2 0.02 295);
+  --muted: oklch(0.95 0.02 295);
+  --muted-foreground: oklch(0.48 0.03 295);
+  --accent: oklch(0.92 0.03 295);
+  --accent-foreground: oklch(0.2 0.02 295);
+  --border: oklch(0.88 0.02 295);
+  --input: oklch(0.88 0.02 295);
+  --ring: oklch(0.55 0.2 295);
+  --primary: oklch(0.52 0.2 295);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --sidebar: oklch(0.98 0.014 295);
+  --sidebar-foreground: oklch(0.2 0.02 295);
+  --sidebar-primary: oklch(0.52 0.2 295);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.92 0.03 295);
+  --sidebar-accent-foreground: oklch(0.2 0.02 295);
+  --sidebar-border: oklch(0.88 0.02 295);
+  --sidebar-ring: oklch(0.55 0.2 295);
+
+  --chart-1: oklch(0.55 0.2 295);
+  --chart-2: oklch(0.6 0.18 250);
+  --chart-3: oklch(0.62 0.16 330);
+  --chart-4: oklch(0.65 0.15 80);
+  --chart-5: oklch(0.58 0.16 200);
+
+  --color-stone-bg: oklch(0.985 0.012 295);
+  --color-stone-card: oklch(0.995 0.01 295);
+  --color-stone-text: oklch(0.2 0.02 295);
+  --color-stone-muted: oklch(0.48 0.03 295);
+  --color-accent-brand: oklch(0.52 0.2 295);
+  --body-grid-color: rgba(88, 28, 135, 0.07);
+}
+
+/* ───────────────────────── classic（暖羊皮纸 / 衬线，企业阅读优先） ───────────────────────── */
+[data-skin='classic'] {
+  --background: oklch(0.975 0.015 75);
+  --foreground: oklch(0.22 0.02 60);
+  --card: oklch(0.99 0.012 70);
+  --card-foreground: oklch(0.22 0.02 60);
+  --popover: oklch(0.99 0.012 70);
+  --popover-foreground: oklch(0.22 0.02 60);
+  --secondary: oklch(0.945 0.02 70);
+  --secondary-foreground: oklch(0.22 0.02 60);
+  --muted: oklch(0.945 0.02 70);
+  --muted-foreground: oklch(0.46 0.02 60);
+  --accent: oklch(0.92 0.03 70);
+  --accent-foreground: oklch(0.22 0.02 60);
+  --border: oklch(0.87 0.02 65);
+  --input: oklch(0.87 0.02 65);
+  --ring: oklch(0.55 0.13 60);
+  --primary: oklch(0.5 0.13 55);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --sidebar: oklch(0.965 0.016 70);
+  --sidebar-foreground: oklch(0.22 0.02 60);
+  --sidebar-primary: oklch(0.5 0.13 55);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.92 0.03 70);
+  --sidebar-accent-foreground: oklch(0.22 0.02 60);
+  --sidebar-border: oklch(0.87 0.02 65);
+  --sidebar-ring: oklch(0.55 0.13 60);
+
+  --chart-1: oklch(0.55 0.13 55);
+  --chart-2: oklch(0.6 0.12 30);
+  --chart-3: oklch(0.58 0.11 90);
+  --chart-4: oklch(0.6 0.1 200);
+  --chart-5: oklch(0.55 0.12 280);
+
+  --color-stone-bg: oklch(0.975 0.015 75);
+  --color-stone-card: oklch(0.99 0.012 70);
+  --color-stone-text: oklch(0.22 0.02 60);
+  --color-stone-muted: oklch(0.46 0.02 60);
+  --color-accent-brand: oklch(0.5 0.13 55);
+  --body-grid-color: rgba(120, 53, 15, 0.06);
+
+  --font-heading: Georgia, 'Times New Roman', 'Songti SC', serif;
+}
+
+/* ───────────────────────── midnight（深海军蓝 / 青绿，开发者 / 酷感） ───────────────────────── */
+[data-skin='midnight'] {
+  --background: oklch(0.97 0.02 240);
+  --foreground: oklch(0.2 0.02 240);
+  --card: oklch(0.99 0.015 240);
+  --card-foreground: oklch(0.2 0.02 240);
+  --popover: oklch(0.99 0.015 240);
+  --popover-foreground: oklch(0.2 0.02 240);
+  --secondary: oklch(0.94 0.025 240);
+  --secondary-foreground: oklch(0.2 0.02 240);
+  --muted: oklch(0.94 0.025 240);
+  --muted-foreground: oklch(0.46 0.02 240);
+  --accent: oklch(0.9 0.03 240);
+  --accent-foreground: oklch(0.2 0.02 240);
+  --border: oklch(0.85 0.03 240);
+  --input: oklch(0.85 0.03 240);
+  --ring: oklch(0.6 0.13 200);
+  --primary: oklch(0.55 0.13 200);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --sidebar: oklch(0.965 0.022 240);
+  --sidebar-foreground: oklch(0.2 0.02 240);
+  --sidebar-primary: oklch(0.55 0.13 200);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.9 0.03 240);
+  --sidebar-accent-foreground: oklch(0.2 0.02 240);
+  --sidebar-border: oklch(0.85 0.03 240);
+  --sidebar-ring: oklch(0.6 0.13 200);
+
+  --chart-1: oklch(0.6 0.13 200);
+  --chart-2: oklch(0.62 0.12 250);
+  --chart-3: oklch(0.6 0.11 300);
+  --chart-4: oklch(0.65 0.13 80);
+  --chart-5: oklch(0.58 0.12 30);
+
+  --color-stone-bg: oklch(0.97 0.02 240);
+  --color-stone-card: oklch(0.99 0.015 240);
+  --color-stone-text: oklch(0.2 0.02 240);
+  --color-stone-muted: oklch(0.46 0.02 240);
+  --color-accent-brand: oklch(0.55 0.13 200);
+  --body-grid-color: rgba(8, 47, 73, 0.07);
+}
+
+/* ───────────────────────── sunset（暖橙 / 赤陶，活力 / 营销向） ───────────────────────── */
+[data-skin='sunset'] {
+  --background: oklch(0.98 0.014 50);
+  --foreground: oklch(0.22 0.02 40);
+  --card: oklch(0.995 0.012 50);
+  --card-foreground: oklch(0.22 0.02 40);
+  --popover: oklch(0.995 0.012 50);
+  --popover-foreground: oklch(0.22 0.02 40);
+  --secondary: oklch(0.95 0.02 50);
+  --secondary-foreground: oklch(0.22 0.02 40);
+  --muted: oklch(0.95 0.02 50);
+  --muted-foreground: oklch(0.47 0.02 40);
+  --accent: oklch(0.92 0.03 50);
+  --accent-foreground: oklch(0.22 0.02 40);
+  --border: oklch(0.88 0.02 45);
+  --input: oklch(0.88 0.02 45);
+  --ring: oklch(0.58 0.16 40);
+  --primary: oklch(0.55 0.16 40);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --sidebar: oklch(0.975 0.016 50);
+  --sidebar-foreground: oklch(0.22 0.02 40);
+  --sidebar-primary: oklch(0.55 0.16 40);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.92 0.03 50);
+  --sidebar-accent-foreground: oklch(0.22 0.02 40);
+  --sidebar-border: oklch(0.88 0.02 45);
+  --sidebar-ring: oklch(0.58 0.16 40);
+
+  --chart-1: oklch(0.58 0.16 40);
+  --chart-2: oklch(0.6 0.14 20);
+  --chart-3: oklch(0.58 0.13 70);
+  --chart-4: oklch(0.6 0.12 200);
+  --chart-5: oklch(0.55 0.13 300);
+
+  --color-stone-bg: oklch(0.98 0.014 50);
+  --color-stone-card: oklch(0.995 0.012 50);
+  --color-stone-text: oklch(0.22 0.02 40);
+  --color-stone-muted: oklch(0.47 0.02 40);
+  --color-accent-brand: oklch(0.55 0.16 40);
+  --body-grid-color: rgba(124, 45, 18, 0.06);
+}
+

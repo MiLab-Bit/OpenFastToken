@@ -1,0 +1,1 @@
+"use strict";(self.rspackChunkfasttoken_web=self.rspackChunkfasttoken_web||[]).push([[1626],{91473(s,e,a){a.r(e);var k=a(37264);a.d(e,{Mermaid:()=>k.l})}}]);

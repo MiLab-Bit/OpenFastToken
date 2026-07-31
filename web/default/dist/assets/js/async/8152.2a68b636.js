@@ -1,0 +1,1 @@
+"use strict";(self.rspackChunkfasttoken_web=self.rspackChunkfasttoken_web||[]).push([[8152],{65419(e,s,t){t.r(s);let k=t(52306).t;t.d(s,{},{component:k})}}]);

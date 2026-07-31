@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# FastToken 部署脚本：配置安全 + 幂等 + 自带冒烟与回滚
+# 原则：仅替换二进制，绝不触碰 .env / DB / nginx / systemd / cert/
+set -eu
+BIN=/opt/fasttoken/fasttoken
+TS=$(date +%Y%m%d%H%M%S)
+BAK=$BIN.bak.$TS
+export PATH=/usr/local/go/bin:$PATH
+export GOGC=50 GOFLAGS=-p=2 GOPROXY=https://goproxy.cn,direct GIN_MODE=release
+
+echo "[deploy] backup binary -> $BAK"
+cp -p "$BIN" "$BAK"
+
+echo "[deploy] build (embeds web/default/dist via go embed)"
+cd /opt/fasttoken
+# 必须用 -a 强制无缓存重建：go embed 的构建缓存有时会不随 dist 变更失效，
+# 导致二进制嵌的还是旧 dist（翻译缺失、页面回退成英文 key）。-a 保证重新嵌入当前 dist。
+go build -a -o /tmp/ft.new . || { echo "BUILD_FAIL"; exit 1; }
+
+echo "[deploy] swap binary"
+mv /tmp/ft.new "$BIN"
+chmod +x "$BIN"
+
+# 收紧密钥文件权限（非破坏性，仅提权）
+chmod 600 /opt/fasttoken/.env 2>/dev/null || true
+chmod 600 /opt/fasttoken/cert/wechat/pub_key.pem 2>/dev/null || true
+
+echo "[deploy] restart fasttoken"
+systemctl restart fasttoken
+sleep 8
+
+echo "[deploy] smoke: /api/payment/status (retry up to 5x)"
+ok=0
+for n in 1 2 3 4 5; do
+  if curl -fsS --max-time 12 http://127.0.0.1:3000/api/payment/status | grep -q '"ready":true'; then
+    ok=1; break
+  fi
+  sleep 2
+done
+if [ "$ok" != "1" ]; then
+  echo "SMOKE_FAIL -> rollback to $BAK"
+  mv "$BAK" "$BIN"
+  systemctl restart fasttoken
+  sleep 8
+  curl -fsS --max-time 12 http://127.0.0.1:3000/api/payment/status || echo "ROLLBACK_FAIL"
+  exit 1
+fi
+echo "DEPLOY_OK ($TS)"

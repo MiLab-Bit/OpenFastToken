@@ -1,0 +1,69 @@
+package common
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+)
+
+func GetEnvOrDefault(env string, defaultValue int) int {
+	if env == "" || os.Getenv(env) == "" {
+		return defaultValue
+	}
+	num, err := strconv.Atoi(os.Getenv(env))
+	if err != nil {
+		SysError(fmt.Sprintf("failed to parse %s: %s, using default value: %d", env, err.Error(), defaultValue))
+		return defaultValue
+	}
+	return num
+}
+
+func GetEnvOrDefaultString(env string, defaultValue string) string {
+	if env == "" || os.Getenv(env) == "" {
+		return defaultValue
+	}
+	return os.Getenv(env)
+}
+
+func GetEnvOrDefaultBool(env string, defaultValue bool) bool {
+	if env == "" || os.Getenv(env) == "" {
+		return defaultValue
+	}
+	b, err := strconv.ParseBool(os.Getenv(env))
+	if err != nil {
+		SysError(fmt.Sprintf("failed to parse %s: %s, using default value: %t", env, err.Error(), defaultValue))
+		return defaultValue
+	}
+	return b
+}
+
+// GetEnvOrDefaultInt is an alias for GetEnvOrDefault for clarity
+func GetEnvOrDefaultInt(env string, defaultValue int) int {
+	return GetEnvOrDefault(env, defaultValue)
+}
+
+// GetEnvOrDefaultInt64 returns environment variable as int64
+func GetEnvOrDefaultInt64(env string, defaultValue int64) int64 {
+	if env == "" || os.Getenv(env) == "" {
+		return defaultValue
+	}
+	num, err := strconv.ParseInt(os.Getenv(env), 10, 64)
+	if err != nil {
+		SysError(fmt.Sprintf("failed to parse %s: %s, using default value: %d", env, err.Error(), defaultValue))
+		return defaultValue
+	}
+	return num
+}
+
+// GetEnvOrDefaultFloat returns environment variable as float32
+func GetEnvOrDefaultFloat(env string, defaultValue float32) float32 {
+	if env == "" || os.Getenv(env) == "" {
+		return defaultValue
+	}
+	f, err := strconv.ParseFloat(os.Getenv(env), 32)
+	if err != nil {
+		SysError(fmt.Sprintf("failed to parse %s: %s, using default value: %f", env, err.Error(), defaultValue))
+		return defaultValue
+	}
+	return float32(f)
+}

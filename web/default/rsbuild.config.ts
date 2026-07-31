@@ -1,0 +1,176 @@
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { defineConfig, loadEnv, type RsbuildConfig } from '@rsbuild/core'
+import { pluginReact } from '@rsbuild/plugin-react'
+import { tanstackRouter } from '@tanstack/router-plugin/rspack'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+export default defineConfig(({ envMode }) => {
+  const env = loadEnv({ mode: envMode, prefixes: ['VITE_'] })
+  const serverUrl =
+    process.env.VITE_REACT_APP_SERVER_URL ||
+    env.rawPublicVars.VITE_REACT_APP_SERVER_URL ||
+    'http://localhost:3000'
+
+  const isProd = envMode === 'production'
+  const devProxy = Object.fromEntries(
+    (['/api', '/mj', '/pg'] as const).map((key) => [
+      key,
+      { target: serverUrl, changeOrigin: true },
+    ]),
+  ) as Record<string, { target: string; changeOrigin: boolean }>
+
+  return {
+    plugins: [pluginReact()],
+    // Enhanced chunk splitting for better caching and loading performance
+    splitChunks: {
+      preset: 'default',
+      cacheGroups: {
+        // React core libraries
+        'vendor-react': {
+          test: /node_modules[\\/](react|react-dom)[\\/]/,
+          name: 'vendor-react',
+          chunks: 'all',
+          priority: 10,
+          enforce: true,
+        },
+        // UI component libraries
+        'vendor-ui': {
+          test: /node_modules[\\/](@base-ui|@radix-ui|@headlessui)[\\/]/,
+          name: 'vendor-ui',
+          chunks: 'all',
+          priority: 9,
+          enforce: true,
+        },
+        // TanStack libraries
+        'vendor-tanstack': {
+          test: /node_modules[\\/]@tanstack[\\/]/,
+          name: 'vendor-tanstack',
+          chunks: 'all',
+          priority: 8,
+          enforce: true,
+        },
+        // Charting and visualization libraries (large, load on demand)
+        'vendor-charts': {
+          test: /node_modules[\\/](recharts|@visactor)[\\/]/,
+          name: 'vendor-charts',
+          chunks: 'all',
+          priority: 7,
+          enforce: true,
+        },
+        // Utility libraries
+        'vendor-utils': {
+          test: /node_modules[\\/](axios|zod|zustand|i18next|dayjs)[\\/]/,
+          name: 'vendor-utils',
+          chunks: 'all',
+          priority: 6,
+          enforce: true,
+        },
+        // Icon libraries
+        'vendor-icons': {
+          test: /node_modules[\\/](lucide-react|react-icons|@hugeicons)[\\/]/,
+          name: 'vendor-icons',
+          chunks: 'all',
+          priority: 5,
+          enforce: true,
+        },
+      },
+    },
+    source: {
+      entry: {
+        index: './src/main.tsx',
+      },
+    },
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
+    html: {
+      template: './index.html',
+      // Inject performance hints
+      inject: 'head',
+      favicon: './public/favicon.ico',
+    },
+    server: {
+      host: '0.0.0.0',
+      proxy: devProxy,
+      // Enable hot module replacement in development
+      hmr: true,
+      // Enable gzip compression in development
+      compress: true,
+    },
+    output: {
+      // Production optimizations
+      minify: (isProd ? true : false) as NonNullable<RsbuildConfig['output']>['minify'], // SWC minify (safe: the duplicate 'skin' declaration in skin-provider was removed)
+      target: 'web',
+      distPath: {
+        root: 'dist',
+        js: 'assets/js',
+        css: 'assets/css',
+        svg: 'assets/icons',
+        font: 'assets/fonts',
+        image: 'assets/images',
+      },
+      // Add content hashing for better cache control
+      filename: {
+        js: isProd ? '[name].[contenthash:8].js' : '[name].js',
+        css: isProd ? '[name].[contenthash:8].css' : '[name].css',
+      },
+      // Rely on Rsbuild default legalComments
+      legalComments: 'linked',
+    },
+    performance: {
+      // Remove console in production
+      removeConsole: isProd ? ['log', 'info'] : false,
+      // Enable build cache for faster subsequent builds
+      buildCache: {
+        cacheDigest: [
+          process.env.VITE_REACT_APP_VERSION,
+          process.env.NODE_ENV,
+        ],
+        // Cache location
+        cacheDirectory: path.resolve(__dirname, 'node_modules/.cache/rsbuild'),
+      },
+      // Add performance budgeting
+      ...(isProd && {
+        bundleAnalyze: {
+          enable: true,
+          analyzerMode: 'static',
+          reportFilename: 'bundle-report.html',
+        },
+      }),
+    },
+    tools: {
+      rspack: {
+        plugins: [
+          tanstackRouter({
+            target: 'react',
+            // Dev: avoid per-route async chunks (reduces white flash on navigation + faster HMR feedback).
+            // Prod: keep route-based code splitting.
+            autoCodeSplitting: isProd,
+          }),
+        ],
+        // Optimize chunk loading
+        optimization: {
+          runtimeChunk: 'single',
+          emitOnErrors: false,
+        },
+        stats: { preset: 'errors-warnings', colors: false },
+      },
+    },
+    // Add environment-specific configuration
+    environments: {
+      web: {
+        // Web-specific optimizations
+        ...(isProd && {
+          output: {
+            // Enable Brotli compression for modern browsers
+            assetPrefix: process.env.CDN_URL || '/',
+          },
+        }),
+      },
+    },
+  }
+})
