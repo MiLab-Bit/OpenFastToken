@@ -23,6 +23,8 @@ type Manager struct {
 	User    repository.UserRepository
 	Channel repository.ChannelRepository
 	Token   repository.TokenRepository
+	// Skill Agent Marketplace 技能目录仓库
+	Skill repository.SkillRepository
 }
 
 var (
@@ -39,6 +41,7 @@ func Init() error {
 			User:    impl.NewUserRepository(),
 			Channel: impl.NewChannelRepository(),
 			Token:   impl.NewTokenRepository(),
+			Skill:   impl.NewSkillRepository(),
 		})
 	})
 	return initErr
@@ -55,6 +58,7 @@ func Default() *Manager {
 		User:    impl.NewUserRepository(),
 		Channel: impl.NewChannelRepository(),
 		Token:   impl.NewTokenRepository(),
+		Skill:   impl.NewSkillRepository(),
 	}
 	defaultManager.Store(mgr)
 	return mgr
@@ -71,6 +75,7 @@ func ResetDefault() {
 		User:    impl.NewUserRepository(),
 		Channel: impl.NewChannelRepository(),
 		Token:   impl.NewTokenRepository(),
+		Skill:   impl.NewSkillRepository(),
 	})
 }
 
@@ -87,4 +92,9 @@ func MustChannel() repository.ChannelRepository {
 // MustToken 返回 TokenRepository，若为空则 panic
 func MustToken() repository.TokenRepository {
 	return Default().Token
+}
+
+// MustSkill 返回 SkillRepository，若为空则 panic
+func MustSkill() repository.SkillRepository {
+	return Default().Skill
 }

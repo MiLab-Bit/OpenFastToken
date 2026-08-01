@@ -307,6 +307,31 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.DELETE("/performance/logs", middleware.AdminAuth(), controller.CleanupLogFiles)
 		apiRouter.GET("/perf-metrics/summary", middleware.UserAuth(), controller.GetPerfMetricsSummary)
 
+		// ==================== Agent Marketplace (L1) ====================
+		// 目录读接口公开（未登录也可浏览已发布技能）；发布接口需管理员。
+		// 注意：GET /skills/:id 与 GET /skills/:id/download 段数不同可共存；
+		// 不可再注册 /skills/<静态段> 同段路径（如 /skills/latest），会与 :id 冲突。
+		marketplaceRoute := apiRouter.Group("/marketplace")
+		{
+			marketplaceRoute.GET("/skills", controller.ListMarketplaceSkills)
+			marketplaceRoute.GET("/skills/:id", controller.GetMarketplaceSkill)
+			marketplaceRoute.GET("/skills/:id/download", controller.DownloadMarketplaceSkill)
+
+			adminSkill := marketplaceRoute.Group("")
+			adminSkill.Use(middleware.AdminAuth())
+			adminSkill.POST("/skills", controller.PublishMarketplaceSkill)
+		}
+
+		// ==================== Tenant Self-Service (member) ====================
+		// 成员自助接口：企业 ID 一律取自 c.GetInt("enterprise_id")（由 UserAuth 注入），
+		// 不接受前端传入的 enterprise_id / tenant_id，杜绝越权读取他人企业数据。
+		tenantSelfRoute := apiRouter.Group("/user/tenant")
+		tenantSelfRoute.Use(middleware.UserAuth())
+		{
+			tenantSelfRoute.GET("/info", controller.GetMyTenantInfo)
+			tenantSelfRoute.GET("/members", controller.GetMyTenantMembers)
+		}
+
 		// ==================== Enterprise (admin) ====================
 		enterpriseRoute := apiRouter.Group("/enterprise")
 		enterpriseRoute.Use(middleware.AdminAuth())

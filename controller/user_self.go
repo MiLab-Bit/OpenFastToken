@@ -50,6 +50,8 @@ func GetSelf(c *gin.Context) {
 		"setting":           user.Setting,
 		"sidebar_modules":   userSetting.SidebarModules,
 		"permissions":       permissions,
+		// Phase 1 多租户：暴露所属企业 ID，供前端判断是否展示租户控制台入口（0 表示个人用户）
+		"enterprise_id": user.EnterpriseId,
 	}
 
 	c.JSON(http.StatusOK, gin.H{

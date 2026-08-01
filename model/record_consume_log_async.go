@@ -14,6 +14,12 @@ func RecordConsumeLogAsync(username, requestId, upstreamRequestId, clientIP stri
 	}
 	logger.LogInfo(nil, fmt.Sprintf("record consume log: userId=%d, params=%s", userId, common.GetJsonString(params)))
 	otherStr := common.MapToJsonStr(params.Other)
+	// Phase 1 多租户：无 gin.Context，优先取调用方透传值；
+	// 缺省时回退到 DB 查询（此处已在异步 worker 中，非请求热路径）。
+	tenantId := params.TenantId
+	if tenantId == 0 {
+		tenantId = GetUserEnterpriseId(userId)
+	}
 	log := &Log{
 		UserId:           userId,
 		Username:         username,
@@ -34,6 +40,7 @@ func RecordConsumeLogAsync(username, requestId, upstreamRequestId, clientIP stri
 		RequestId:        requestId,
 		UpstreamRequestId: upstreamRequestId,
 		Other:            otherStr,
+		TenantId:         tenantId,
 	}
 	err := LOG_DB.Create(log).Error
 	if err != nil {

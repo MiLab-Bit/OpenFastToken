@@ -315,6 +315,8 @@ func migrateDB() error {
 		&UserGiftCounter{},
 		&PasskeyCredential{},
 		&UiSkin{},
+		// Phase 1b Agent Marketplace L1：技能注册中心目录表
+		&Skill{},
 	)
 	return err
 }
@@ -361,6 +363,8 @@ func migrateDBFast() error {
 		{&Activity{}, "Activity"},
 		{&ActivityGrant{}, "ActivityGrant"},
 		{&UiSkin{}, "UiSkin"},
+		// Phase 1b Agent Marketplace L1：技能注册中心目录表
+		{&Skill{}, "Skill"},
 	}
 	// 动态计算migration数量，确保errChan缓冲区足够大
 	errChan := make(chan error, len(migrations))

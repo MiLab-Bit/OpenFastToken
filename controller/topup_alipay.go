@@ -159,6 +159,8 @@ func (*AlipayAdaptor) RequestPay(c *gin.Context, req *AlipayPayRequest) {
 		PaymentProvider: model.PaymentProviderAlipay,
 		CreateTime:      time.Now().Unix(),
 		Status:          common.TopUpStatusPending,
+		// Phase 1 多租户：本路由在 UserAuth() 下，enterprise_id 由 authHelper 保证注入
+		TenantId: c.GetInt("enterprise_id"),
 	}
 	err = topUp.Insert()
 	if err != nil {
