@@ -357,3 +357,115 @@ DEPLOY_OK 20260729084530（线上 `index.3a797703.css` / `index.f94cb0a0.js`，�
 验证：首页 200、服务 active（PID 2901967）、二进制暗色背景值 `oklch(0.16 0.012 250)`=0（暗色套已移除）、`data-skin` 选择器 5 套已打入。
 
 遗留：个别页面若仍不清晰，多为 `features/home` 营销区 `text-white`（刻意深色设计）或状态色映射（`lib/colors.ts` 等），需截图定点修。
+
+
+### ⚠️ 变更记录 2026-07-31（未完成部署 · 源码与线上二进制不一致 · 接手必读）
+
+> **本节是警示，不是成果记录。读完再动手。**
+
+#### 一句话
+
+2026-07-31 有人在生产目录上直接改了 22 个 Go 文件、跑了 2 个数据库迁移，但**只有其中一部分被编译上线**。
+现在 `/opt/fasttoken` 里的源码 **不等于** 正在跑的那个二进制。
+**在读完本节之前，不要执行 `deploy.sh`，不要执行任何 `go build`。**
+
+#### 为什么危险
+
+`deploy.sh` 做的是 `go build -a -o /tmp/ft.new .` —— 它编译**当前磁盘上的全部源码**，没有任何选择性。
+也就是说：下一个人只要为了任何一个小改动跑一次 `deploy.sh`，就会把 07-31 那批**从未编译、从未验证、从未冒烟**的改动**一次性全量推上生产**。
+`deploy.sh` 的冒烟测试只有一条 `curl /api/payment/status` 判 `"ready":true`（`deploy.sh:114-121`），它**拦不住**多租户数据归属错误这类问题。
+
+#### 硬证据（2026-08-02 实测）
+
+| 项 | 值 |
+|---|---|
+| 现役二进制 | `/opt/fasttoken/fasttoken`，mtime **2026-07-31 10:50:03**，md5 `94150bc3efb5aeaaf37a027eecbae0c5` |
+| 服务启动时间 | `Active: since Fri 2026-07-31 13:15:56 CST`，MainPID 3081984 |
+| 13:15:56 那次重启的备份 | `fasttoken.bak.20260731131555`，md5 **完全相同** → **那次重启没有换二进制，只是重启** |
+| 07-31 全天改动的 .go 文件 | **22 个** |
+| 其中在 10:50 构建**之前**改的 | **4 个** → 已进二进制，13:15:56 重启后**已生效** |
+| 其中在 10:50 构建**之后**改的 | **18 个** → **从未编译，从未上线** |
+
+#### 已经生效的 4 个文件（10:18–10:48 修改，10:50 编入，13:15:56 重启后上线）
+
+```
+10:18:01  model/channel.go
+10:48:59  model/user.go
+10:48:59  model/token.go
+10:48:59  controller/token.go
+```
+
+> 注意时间差：这批代码 10:50 就编好了，但服务直到 **13:15:56** 才重启。
+> 也就是说 **07-31 13:15:56 是「部分多租户」悄悄上线的时刻**，没有任何变更记录记载这件事。
+
+#### 尚未生效的 18 个文件（11:42–12:42 修改，未编译）
+
+```
+11:42:16  model/tenant_scope.go
+11:42:16  middleware/auth.go
+11:42:16  controller/user_self.go
+11:42:17  model/log.go
+11:42:17  model/topup.go
+11:42:17  model/record_consume_log_async.go
+11:42:17  controller/log.go
+11:42:17  controller/topup_alipay.go
+11:42:18  controller/topup_wechat.go
+12:01:26  model/skill.go
+12:01:26  repository/skill_repository.go
+12:01:26  repository/impl/skill_repo_pg.go
+12:01:26  di/di.go
+12:01:26  controller/repo_accessors.go
+12:01:26  model/main.go
+12:03:17  controller/marketplace.go
+12:42:22  router/api-router.go
+12:42:22  controller/tenant_self.go
+```
+
+这批改动在做两件事（从 `.bak` 命名 `tenant_infra` / `tenant_a` / `tenant_b` 和 diff 可读出）：
+
+1. **多租户 Phase 1 收尾**（对应 `FastToken_架构升级路线_Review_v2` §4.2 SaaS Soft）
+   - `middleware/auth.go` 新增两处 `c.Set("enterprise_id", token.TenantId)`，让 relay 热路径不查库就能把租户带到下游写日志
+   - `router/api-router.go` 新增成员自助路由组 `/api/user/tenant/info`、`/api/user/tenant/members`
+2. **Agent Marketplace L1（技能注册中心）**
+   - 新增 `skills` 表模型 + repository + DI 装配 + `controller/marketplace.go`
+
+#### 数据库侧：三个迁移，两个已执行、一个没有
+
+| 迁移 | 时间 | 状态（2026-08-02 实测） | 证据 |
+|---|---|---|---|
+| `001_add_tenant_id.sql` | 07-31 10:02 | ✅ **已执行** | `tenant_id` 列存在于 `channels` / `logs` / `tokens` / `top_ups` |
+| `002_backfill_tenant_id.sql` | 07-31 10:18 | ✅ **已执行** | 存量行 `tenant_id` 已从 NULL 回填为 0 |
+| `003_create_skills.sql` | 07-31 12:01 | ❌ **未执行** | `information_schema.tables` 中**不存在 `skills` 表** |
+
+> **更正一条流传中的说法**：曾有「`003_create_skills.sql` 已在数据库里执行、schema 领先于代码」的判断，**实测不成立**。
+> `skills` 表根本不存在。原因写在 003 脚本自己的注释里：「本脚本与 GORM `AutoMigrate(&Skill{})` 等价……服务启动会自动建表」——
+> 而注册 AutoMigrate 的 `model/main.go` 和 `model/skill.go` 正是那 18 个**未编译**文件里的两个。所以服务启动时压根不知道有 `Skill` 这个模型，表自然没建。
+> 正确的表述是：**skills 方向是「代码领先于 schema」**（代码写好了没编译，表也没建，两边都没上线，属于"整体未落地"）；
+> **tenant 方向才是「schema 领先于代码」**（列加了、数据回填了，但用它的强制逻辑没编译上线）。
+
+#### 当前真实风险：租户归属数据正在静默漂移
+
+这是 tenant 方向"schema 已动、代码没跟上"造成的实际后果：
+
+- `002` 已把所有存量行的 `tenant_id` 回填为 0（个人）或 `enterprise_id`（企业成员）。
+- 但把租户写进新日志的那段代码（`middleware/auth.go` 的 `c.Set("enterprise_id", ...)` + `model/log.go`）**没有编译上线**。
+- 实测 `logs` 表分布：`tenant_id = 0` 共 16142 行（最新到 2026-08-02）；`tenant_id IS NULL` 共 94 行（全部集中在 2026-07-31）。
+  那 94 行 NULL 是 10:18 迁移之后、13:15 重启之前，由旧二进制写入的。
+- 结论：**13:15:56 之后所有新日志的 `tenant_id` 一律写 0**，不管这个用户属不属于企业。
+
+**目前尚未造成可见损失**，因为 `enterprise_user` 表只有 2 个成员（enterprise_id = 2 和 3），且这两人当前没有 token、没有日志（`tokens` 表 20 行全部 `tenant_id=0`）。
+但机制是活的：**只要这两个企业成员开始用，他们的用量就会被记到 tenant 0 名下**，企业用量统计和后续按租户对账会直接错账。
+
+#### 接手的人该怎么办（按顺序）
+
+1. **先别 build。** 需要重启就用 `systemctl restart fasttoken`（会沿用现役 10:50 二进制，行为不变）。
+2. **决定这 18 个文件的去留**，二选一，不要拖着：
+   - **要它**：先在非生产环境编译 + 验证多租户归属和 skills 建表，再走 `deploy.sh`；上线后立刻核对 `logs.tenant_id` 是否开始正确落 `enterprise_id`。
+   - **不要它**：把 18 个文件用同目录的 `.bak` 还原到 10:50 那个状态，让磁盘源码与现役二进制对齐。**还原前先把当前版本另存一份**，这批代码本身是有价值的。
+3. **无论选哪条**，`003_create_skills.sql` 与 `model/skill.go` 必须同进同退——只上代码不建表、或只建表不上代码，都会留下第二个漂移。
+4. **回滚能力提醒**：`deploy.sh` 的自动回滚**只回滚二进制，不回滚数据库**（`deploy.sh:122-129`）。如果新版本触发了 `AutoMigrate` 建表或改列，回滚二进制之后表还在。数据库备份已于 2026-08-02 落地（systemd timer 每日 03:30，全量 pg_dump 至 /var/backups/fasttoken/，含恢复演练验证）；git 仓库已初始化（tag pre-0731-drift 为线上基线，git diff pre-0731-drift..HEAD 可查全部未编译改动）。
+
+#### 顺带记录：目录里的"版本管理"现状
+
+`/opt/fasttoken` **不是 git 仓库**（无 `.git`）。已于 2026-08-02 初始化 git（commit 7dbc5ec = 线上运行态基线 pre-0731-drift，commit cc7d75c = 18 个未编译改动）；此前靠 55 个 `.bak*` 文件充当版本管理，命名规则各不相同（`.bak.<日期>` / `.bak.tenant_a_<时间戳>` / `.bak.p2.<时间戳>` / `.orig.<日期>`）。
+本次能还原出 07-31 到底改了什么，完全是靠这些 `.bak` 文件碰巧还在。**git 化之后，这个机制已被可审计的 diff 取代。**
