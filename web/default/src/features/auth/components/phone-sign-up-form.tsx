@@ -36,7 +36,9 @@ import {
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 import { sendPhoneCode, phoneRegister } from '@/features/auth/api'
+import { LegalConsent } from '@/features/auth/components/legal-consent'
 import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
+import { useStatus } from '@/hooks/use-status'
 
 // ============================================================================
 // Form Schema
@@ -83,6 +85,21 @@ export function PhoneSignUpForm({ redirectTo }: { redirectTo?: string }) {
   const [countdown, setCountdown] = useState(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { handleLoginSuccess } = useAuthRedirect()
+
+  const { status } = useStatus()
+  const [agreedToLegal, setAgreedToLegal] = useState(false)
+  const hasUserAgreement = Boolean(status?.user_agreement_enabled)
+  const hasPrivacyPolicy = Boolean(status?.privacy_policy_enabled)
+  const requiresLegalConsent = hasUserAgreement || hasPrivacyPolicy
+  const legalConsentErrorMessage = t('please agree to legal terms first')
+
+  useEffect(() => {
+    if (requiresLegalConsent) {
+      setAgreedToLegal(false)
+    } else {
+      setAgreedToLegal(true)
+    }
+  }, [requiresLegalConsent])
 
   const form = useForm<PhoneRegisterFormValues>({
     resolver: zodResolver(phoneRegisterFormSchema),
@@ -153,6 +170,10 @@ export function PhoneSignUpForm({ redirectTo }: { redirectTo?: string }) {
 
   // Handle form submission
   async function onSubmit(data: PhoneRegisterFormValues) {
+    if (requiresLegalConsent && !agreedToLegal) {
+      toast.error(legalConsentErrorMessage)
+      return
+    }
     setIsLoading(true)
     try {
       const res = await phoneRegister({
@@ -283,11 +304,18 @@ export function PhoneSignUpForm({ redirectTo }: { redirectTo?: string }) {
           )}
         />
 
+        <LegalConsent
+          status={status}
+          checked={agreedToLegal}
+          onCheckedChange={setAgreedToLegal}
+          className="mt-1"
+        />
+
         {/* Submit Button */}
         <Button
           type="submit"
           className="mt-2 w-full justify-center gap-2"
-          disabled={isLoading}
+          disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
         >
           {isLoading ? <Loader2 className="animate-spin" /> : null}
           {t('Sign up')}
