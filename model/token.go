@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"www.abc-ai.cn/FastToken/common"
-	"www.abc-ai.cn/FastToken/setting/operation_setting"
 	"github.com/bytedance/gopkg/util/gopool"
 	"gorm.io/gorm"
+	"www.abc-ai.cn/FastToken/common"
+	"www.abc-ai.cn/FastToken/setting/operation_setting"
 )
 
 type Token struct {
@@ -231,10 +231,9 @@ func GetTokenByIds(id int, userId int) (*Token, error) {
 	if id == 0 || userId == 0 {
 		return nil, errors.New("id 或 userId 为空！")
 	}
-	entId := GetUserEnterpriseId(userId)
 	token := Token{Id: id}
 	var err error = nil
-	err = DB.First(&token, "id = ? AND (user_id = ? OR (tenant_id = ? AND tenant_id != 0))", id, userId, entId).Error
+	err = DB.First(&token, "id = ? AND user_id = ?", id, userId).Error
 	return &token, err
 }
 
@@ -367,9 +366,8 @@ func DeleteTokenById(id int, userId int) (err error) {
 	if id == 0 || userId == 0 {
 		return errors.New("id 或 userId 为空！")
 	}
-	entId := GetUserEnterpriseId(userId)
 	token := Token{Id: id}
-	err = DB.Where("user_id = ? OR (tenant_id = ? AND tenant_id != 0)", userId, entId).First(&token).Error
+	err = DB.Where("user_id = ?", userId).First(&token).Error
 	if err != nil {
 		return err
 	}
@@ -453,13 +451,12 @@ func BatchDeleteTokens(ids []int, userId int) (int, error) {
 	tx := DB.Begin()
 
 	var tokens []Token
-	entId := GetUserEnterpriseId(userId)
-	if err := tx.Where("(user_id = ? OR (tenant_id = ? AND tenant_id != 0)) AND id IN (?)", userId, entId, ids).Find(&tokens).Error; err != nil {
+	if err := tx.Where("user_id = ? AND id IN (?)", userId, ids).Find(&tokens).Error; err != nil {
 		tx.Rollback()
 		return 0, err
 	}
 
-	if err := tx.Where("(user_id = ? OR (tenant_id = ? AND tenant_id != 0)) AND id IN (?)", userId, entId, ids).Delete(&Token{}).Error; err != nil {
+	if err := tx.Where("user_id = ? AND id IN (?)", userId, ids).Delete(&Token{}).Error; err != nil {
 		tx.Rollback()
 		return 0, err
 	}
@@ -481,9 +478,8 @@ func BatchDeleteTokens(ids []int, userId int) (int, error) {
 
 func GetTokenKeysByIds(ids []int, userId int) ([]Token, error) {
 	var tokens []Token
-	entId := GetUserEnterpriseId(userId)
 	err := DB.Select("id", commonKeyCol).
-		Where("(user_id = ? OR (tenant_id = ? AND tenant_id != 0)) AND id IN (?)", userId, entId, ids).
+		Where("user_id = ? AND id IN (?)", userId, ids).
 		Find(&tokens).Error
 	return tokens, err
 }
