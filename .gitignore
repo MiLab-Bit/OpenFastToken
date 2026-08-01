@@ -57,3 +57,4 @@ fasttoken.db
 .idea/
 .vscode/
 *.swp
+pprof/
