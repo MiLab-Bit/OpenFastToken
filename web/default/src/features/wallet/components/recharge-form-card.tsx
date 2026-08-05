@@ -247,7 +247,7 @@ export function RechargeFormCard({
                           <>
                             Pay {formatCurrency(actualPrice)}
                             <span className='text-green-600 font-medium'>
-                              {' '}• {t('Credit')}: {formatCurrency(bonusCredit - actualPrice)}
+                              {' '}• {t('Credit')}: {formatCurrency(bonusCredit)}
                             </span>
                           </>
                         ) : (
