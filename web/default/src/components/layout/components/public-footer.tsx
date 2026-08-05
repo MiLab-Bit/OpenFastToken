@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023-2026 OpenFastToken
+Copyright (C) 2023-2026 FastToken
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -13,7 +13,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General 
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-For commercial licensing, please contact support@example.com
+For commercial licensing, please contact hello@fasttoken.example.com
 */
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
@@ -65,12 +65,12 @@ export function PublicFooter({ className }: PublicFooterProps) {
           .{' '}
           {t('All rights reserved.')}{' '}
           <a
-            href='https://openfasttoken.example/docs'
+            href='https://fasttoken.example.com/docs'
             target='_blank'
             rel='noopener noreferrer'
             className='text-muted-foreground hover:text-accent-brand transition-colors'
           >
-            {' '}{'OpenFastToken'}
+            {' '}{'FastToken'}
           </a>
         </p>
 
