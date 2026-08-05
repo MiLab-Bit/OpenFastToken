@@ -146,6 +146,19 @@ func GetUserById(id int, selectAll bool) (*User, error) {
 	return &user, err
 }
 
+// GetUserEnterpriseId 返回用户关联的企业 ID（无关联则返回 0）。
+// 单列索引查询，开销极低，供 Phase 1 多租户隔离逻辑使用。
+func GetUserEnterpriseId(userId int) int {
+	if userId <= 0 {
+		return 0
+	}
+	var entId int
+	if err := DB.Model(&User{}).Where("id = ?", userId).Select("enterprise_id").Scan(&entId).Error; err != nil {
+		return 0
+	}
+	return entId
+}
+
 func GetUserIdByEmail(email string) int {
 	var user User
 	DB.Select("id").Where("LOWER(email) = LOWER(?)", email).First(&user)
@@ -393,9 +406,25 @@ func GetUserUsedQuota(id int) (int, error) {
 	return user.UsedQuota, err
 }
 
-// DecreaseUserQuota decreases user's quota
+// DecreaseUserQuota decreases user's quota.
+// When force is false, a conditional update (WHERE quota >= ?) prevents the balance
+// from going negative and guards against concurrent oversell.
+// When force is true (e.g. admin manual adjustment/write-off), the check is skipped.
 func DecreaseUserQuota(id int, quota int, force bool) error {
-	return DB.Model(&User{}).Where("id = ?", id).Update("quota", gorm.Expr("quota - ?", quota)).Error
+	if quota <= 0 {
+		return nil
+	}
+	if force {
+		return DB.Model(&User{}).Where("id = ?", id).Update("quota", gorm.Expr("quota - ?", quota)).Error
+	}
+	result := DB.Model(&User{}).Where("id = ? AND quota >= ?", id, quota).Update("quota", gorm.Expr("quota - ?", quota))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("insufficient quota for user %d", id)
+	}
+	return nil
 }
 
 // DeltaUpdateUserQuota updates user's quota by delta
