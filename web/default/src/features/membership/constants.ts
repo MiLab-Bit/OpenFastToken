@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023-2026 OpenFastToken
+Copyright (C) 2023-2026 FastToken
 */
 import type { MembershipLevelConfig, MembershipLevel } from './types'
 
@@ -17,7 +17,7 @@ export const MEMBERSHIP_LEVEL_CONFIGS: Record<
     color: 'text-muted-foreground',
     bgColor: 'bg-muted border-border',
     icon: '🥈',
-    description: '享受标准会员折扣，API调用费用9.8折优惠',
+    description: '折上折，充值20%赠送外再打9.8折',
   },
   gold: {
     key: 'gold',
@@ -28,7 +28,7 @@ export const MEMBERSHIP_LEVEL_CONFIGS: Record<
     color: 'text-yellow-600',
     bgColor: 'bg-yellow-50 border-yellow-300',
     icon: '🥇',
-    description: '企业认证会员，API调用费用9.5折优惠',
+    description: '折上折，再打9.5折',
   },
   platinum: {
     key: 'platinum',
@@ -39,7 +39,7 @@ export const MEMBERSHIP_LEVEL_CONFIGS: Record<
     color: 'text-purple-600',
     bgColor: 'bg-purple-50 border-purple-300',
     icon: '💎',
-    description: '顶级会员，API调用费用9折优惠',
+    description: '折上折，再打9折',
   },
 }
 
