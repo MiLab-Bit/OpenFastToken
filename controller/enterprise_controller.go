@@ -202,7 +202,7 @@ func AdminCreateEnterprise(c *gin.Context) {
 	// 售后联系邮箱：未填写时默认平台售后邮箱，企业可填自身邮箱覆盖
 	contactEmail := req.ContactEmail
 	if contactEmail == "" {
-		contactEmail = "support@example.com"
+		contactEmail = "hello@fasttoken.example.com"
 	}
 
 	enterprise := &model.Enterprise{
