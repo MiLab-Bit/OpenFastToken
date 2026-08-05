@@ -129,9 +129,12 @@ type RelayInfo struct {
 	// Billing 是计费会话，封装了预扣费/结算/退款的统一生命周期。
 	// 免费模型时为 nil。
 	Billing BillingSettler
-	// BillingSource indicates whether this request is billed from wallet quota or subscription.
-	// "" or "wallet" => wallet; "subscription" => subscription
+	// BillingSource indicates which funding source this request is billed from.
+	// "" or "wallet" => personal wallet; "enterprise" => enterprise wallet
 	BillingSource string
+	// EnterpriseUserId is the enterprise_user.id used when BillingSource == "enterprise".
+	// Carried into async task private data so refunds return to the original wallet.
+	EnterpriseUserId int
 	// SubscriptionId is the user_subscriptions.id used when BillingSource == "subscription"
 	SubscriptionId int
 	// SubscriptionPreConsumed is the amount pre-consumed on subscription item (quota units or 1)
