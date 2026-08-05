@@ -204,12 +204,17 @@ systemd-run --no-block --unit=ft-deployX.service sh -c \
 ### 6.2 fasttoken-admin（管理员面向）
 - 环境变量：`FASTTOKEN_ADMIN_BASE_URL`、`FASTTOKEN_ADMIN_ACCESS_TOKEN`、`FASTTOKEN_ADMIN_USER_ID`（USER_ID 须为管理员）
 - 动作：`users` / `channels` / `models` / `options` + **FastToken 特色功能**：
-  - 签到 `/api/checkin`、兑换 `/api/redemption`、充值 `/api/topup`、企业 `/api/enterprise`、部署 `/api/deployments`、偏好组 `/api/prefill_group`、分组比例 `/api/group-ratio`、性能 `/api/perf`、排行榜 `/api/rankings`
+  - 签到 `/api/checkin`、兑换 `/api/redemption`、充值 `/api/topup`、企业 `/api/enterprise`、**企业钱包双钱包 `/api/enterprise/:id/wallet` + `/api/user/tenant/wallet/**`**、部署 `/api/deployments`、偏好组 `/api/prefill_group`、分组比例 `/api/group-ratio`、性能 `/api/perf`、排行榜 `/api/rankings`
   - ⚠️ 上述特色功能子路径基于"实测路由组 + New API 管理 API 约定"给出；**更新软件时需按真实接口细化**（详见 `docs/actions-admin.md`）。
+- 企业双钱包（Phase 1，2026-08-06 起）：
+  - 平台授信 `POST /api/enterprise/:id/wallet/recharge`、查看 `GET /api/enterprise/:id/wallet`
+  - 企业管理员自助：派发 `POST /api/user/tenant/wallet/grant`、回收 `POST /api/user/tenant/wallet/recycle`、流水 `GET /api/user/tenant/wallet/txns`、自助充值（微信/支付宝）`POST /api/user/tenant/wallet/topup` + `GET /api/user/tenant/wallet/topup/status`
+  - 安全：企业 ID 一律取自服务端会话（`c.GetInt("enterprise_id")`），前端不得传参；跨租户派发被后端拒绝；额度扣减原子且不为负。
 - 安全：同用户版，且破坏性操作（删用户/渠道、改配额）前须向用户确认。
 
 ### 6.3 使用与交付
-- 尚未初始化为 Git 仓库。使用方式：`npx skills add` 或整目录复制到 Agent 的 skills 目录。
+- **已初始化为 Git 仓库**（`/opt/fasttoken-skills`，分支 `main`，2 次提交）。使用方式：整目录复制到 Agent 的 skills 目录（如 `~/.workbuddy/skills/`），或 `cd /opt/fasttoken-skills && npx skills add . --skill fasttoken`。
+- 文档链接（2026-08-06 更新）：环境变量示例域名统一为 FastToken 实际地址 `https://www.abc-ai.cn`；上游 new-api 文档（apifox.newapi.ai / www.newapi.ai）仅在通用概念参考时使用，FastToken 私有实例不提供 llms.txt。
 - 设计哲学：保持 New API "面向用户"的简洁；admin = 同一安全模型 + 额外管理动作，不引入会泄露密钥的流程。
 
 ---
@@ -469,3 +474,30 @@ DEPLOY_OK 20260729084530（线上 `index.3a797703.css` / `index.f94cb0a0.js`，�
 
 `/opt/fasttoken` **不是 git 仓库**（无 `.git`）。已于 2026-08-02 初始化 git（commit 7dbc5ec = 线上运行态基线 pre-0731-drift，commit cc7d75c = 18 个未编译改动）；此前靠 55 个 `.bak*` 文件充当版本管理，命名规则各不相同（`.bak.<日期>` / `.bak.tenant_a_<时间戳>` / `.bak.p2.<时间戳>` / `.orig.<日期>`）。
 本次能还原出 07-31 到底改了什么，完全是靠这些 `.bak` 文件碰巧还在。**git 化之后，这个机制已被可审计的 diff 取代。**
+
+---
+
+## 变更记录 2026-08-06（双钱包 Phase 1 上线 + skills 更新）
+
+### 一句话
+
+双钱包（个人钱包 + 企业主钱包/成员余额）Phase 1 已上线：`DEPLOY_OK (20260806003955)`，git=`8ab89b2`（分支 `feat/dual-wallet-p1`）。上文 07-31「先别 build」警示已过时——漂移已于 08-02 B0~B3 部署解决，本次为标准 `deploy.sh` 流程。
+
+### 1. 双钱包核心能力（Q1-Q5 全部兑现）
+
+- **Q1 企业优先**：扣费路径（BillingSession/异步任务/遗留回退/MJ）统一走 `CompositeFunding`，企业余额足够走企业钱包，否则全额回退个人，单请求不跨钱包拆分，退款一律原路返回。
+- **Q2 企业认证自动升最高等级**：`ApproveEnterprise` 审批通过 → 提交用户 `MembershipLevel=platinum`（永久，只升不降），企业实体同步 platinum；`Enterprise.GetDiscountRate()` 与个人会员折扣同源（platinum=0.9/gold=0.95/silver=0.98），消除展示/实扣错乱。
+- **Q3 企业自助支付充值**：`TopUp.wallet_type` 分流（wallet/enterprise），微信/支付宝回调入账企业主钱包；企业微信/支付宝下单+查单接口（仅企业管理员）。
+- 数据层：`enterprise_wallet`/`enterprise_wallet_txn` 表、`top_ups.wallet_type` 列（AutoMigrate 已建）；`enterprise_user` 的 quota/used_quota 语义 = 成员真实可用余额。
+- API：平台授信 `POST /api/enterprise/:id/wallet/recharge`；企业自助派发/回收/流水/充值见 §6.2。
+- 前端：钱包页「企业钱包」卡片（成员余额 + 管理员主钱包 + 派发/充值弹窗），7 语言包 +17 键。
+
+### 2. 生产隐患修复（重要）
+
+**微信验签器长期 `ready:false` 根因**：服务以 `User=fasttoken` 运行，但 `cert/wechat/*.pem` 属主是 root 且 600 → fasttoken 读不到公钥。修复：`chown -R fasttoken:fasttoken cert/wechat`；`deploy.sh` 的 `chmod 600 pub_key.pem` 改为 `chown fasttoken + chmod 700 目录 + chmod 600 文件`。实测 `/api/payment/status` → `ready:true`。
+
+### 3. skills 更新（`/opt/fasttoken-skills`，git 2 次提交 `98fe0ea`/`da4fa5b`）
+
+- `fasttoken-admin`：新增「企业钱包 (双钱包)」章节——授信/派发/回收/流水/自助充值全部 API 示例 + 响应结构 + 安全说明；SKILL.md 描述更新。
+- 文档链接全面更新为 FastToken 实际域名 `https://www.abc-ai.cn`（原 newapi 占位符/实例域名全部替换）；安装说明指向 `/opt/fasttoken-skills` 本地包。
+- 回滚点：`fasttoken.bak.20260806003955`；DB 备份 `fasttoken-20260806-004005.dump`。
