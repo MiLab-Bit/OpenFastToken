@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023-2026 OpenFastToken
+Copyright (C) 2023-2026 FastToken
 */
 import { useCallback, useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
