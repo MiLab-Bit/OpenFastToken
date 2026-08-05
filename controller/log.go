@@ -152,7 +152,9 @@ func GetLogsStat(c *gin.Context) {
 }
 
 func GetLogsSelfStat(c *gin.Context) {
-	username := c.GetString("username")
+	// Phase 1 多租户：改按 user_id/tenant_id 口径统计，与 GetUserLogs 列表保持一致。
+	// 服务端以 ctx 为准，绝不接受前端传入的 user_id / enterprise_id。
+	userId := c.GetInt("id")
 	logType, _ := strconv.Atoi(c.Query("type"))
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
@@ -160,7 +162,7 @@ func GetLogsSelfStat(c *gin.Context) {
 	modelName := c.Query("model_name")
 	channel, _ := strconv.Atoi(c.Query("channel"))
 	group := c.Query("group")
-	quotaNum, err := model.SumUsedQuota(logType, startTimestamp, endTimestamp, modelName, username, tokenName, channel, group)
+	quotaNum, err := model.SumUsedQuotaSelf(userId, logType, startTimestamp, endTimestamp, modelName, tokenName, channel, group)
 	if err != nil {
 		common.ApiError(c, err)
 		return
