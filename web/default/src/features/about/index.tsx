@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 /*
-Copyright (C) 2023-2026 OpenFastToken
+Copyright (C) 2023-2026 FastToken
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -310,14 +310,14 @@ export function About() {
                   </div>
                   <div className="flex justify-between py-3 border-b border-border">
                     <span className="text-muted-foreground">{t('about.brand.domainLabel')}</span>
-                    <a href="https://openfasttoken.example" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
-                      https://openfasttoken.example
+                    <a href="https://fasttoken.example.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                      https://fasttoken.example.com
                     </a>
                   </div>
                   <div className="flex justify-between py-3 border-b border-border">
                     <span className="text-muted-foreground">{t('about.brand.docsLabel')}</span>
-                    <a href="https://openfasttoken.example/docs" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
-                      https://openfasttoken.example/docs
+                    <a href="https://fasttoken.example.com/docs" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                      https://fasttoken.example.com/docs
                     </a>
                   </div>
                   <div className="flex justify-between py-3 border-b border-border">
@@ -326,8 +326,8 @@ export function About() {
                   </div>
                   <div className="flex justify-between py-3 border-b border-slate-700">
                     <span className="text-muted-foreground">{t('about.brand.sourceLabel')}</span>
-                    <a href="https://github.com/MiLab-Bit/OpenFastToken" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
-                      https://github.com/MiLab-Bit/OpenFastToken
+                    <a href="https://github.com/abc-ai/FastToken" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                      https://github.com/abc-ai/FastToken
                     </a>
                   </div>
                 </div>
