@@ -11,7 +11,10 @@ import (
 )
 
 const (
+	// BillingSourceWallet 个人钱包（users.quota）
 	BillingSourceWallet = "wallet"
+	// BillingSourceEnterprise 企业钱包（enterprise_user.quota，由企业主钱包派发）
+	BillingSourceEnterprise = "enterprise"
 )
 
 // applyMembershipDiscount 应用会员折扣
