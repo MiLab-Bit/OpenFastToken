@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) 2023-2026 OpenFastToken
+Copyright (C) 2023-2026 FastToken
 
 
 
@@ -30,7 +30,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
 
-For commercial licensing, please contact support@example.com
+For commercial licensing, please contact hello@fasttoken.example.com
 
 */
 
@@ -246,7 +246,7 @@ function ProjectAttribution(props: { currentYear: number; inline?: boolean }) {
 
       <a
 
-        href='https://openfasttoken.example/docs'
+        href='https://fasttoken.example.com/docs'
 
         target='_blank'
 
@@ -258,7 +258,7 @@ function ProjectAttribution(props: { currentYear: number; inline?: boolean }) {
 
         {t('FastToken')}
 
-      </a>{' '}OpenFastToken
+      </a>{' '}FastToken
 
     </span>
 
@@ -326,7 +326,7 @@ export function Footer(props: FooterProps) {
 
             text: t('footer.columns.about.links.aboutProject'),
 
-            href: 'https://openfasttoken.example/docs/wiki/project-introduction/',
+            href: 'https://fasttoken.example.com/docs/wiki/project-introduction/',
 
           },
 
@@ -334,7 +334,7 @@ export function Footer(props: FooterProps) {
 
             text: t('footer.columns.about.links.contact'),
 
-            href: 'https://openfasttoken.example/docs/support/community-interaction/',
+            href: 'https://fasttoken.example.com/docs/support/community-interaction/',
 
           },
 
@@ -342,7 +342,7 @@ export function Footer(props: FooterProps) {
 
             text: t('footer.columns.about.links.features'),
 
-            href: 'https://openfasttoken.example/docs/wiki/features-introduction/',
+            href: 'https://fasttoken.example.com/docs/wiki/features-introduction/',
 
           },
 
@@ -360,7 +360,7 @@ export function Footer(props: FooterProps) {
 
             text: t('footer.columns.docs.links.quickStart'),
 
-            href: 'https://openfasttoken.example/docs/getting-started/',
+            href: 'https://fasttoken.example.com/docs/getting-started/',
 
           },
 
@@ -368,7 +368,7 @@ export function Footer(props: FooterProps) {
 
             text: t('footer.columns.docs.links.installation'),
 
-            href: 'https://openfasttoken.example/docs/installation/',
+            href: 'https://fasttoken.example.com/docs/installation/',
 
           },
 
@@ -376,7 +376,7 @@ export function Footer(props: FooterProps) {
 
             text: t('footer.columns.docs.links.apiDocs'),
 
-            href: 'https://openfasttoken.example/docs/api/',
+            href: 'https://fasttoken.example.com/docs/api/',
 
           },
 
@@ -394,7 +394,7 @@ export function Footer(props: FooterProps) {
 
             text: t('footer.columns.products.links.apiPlatform'),
 
-            href: 'https://openfasttoken.example/docs/api/',
+            href: 'https://fasttoken.example.com/docs/api/',
 
           },
 
@@ -402,7 +402,7 @@ export function Footer(props: FooterProps) {
 
             text: t('footer.columns.products.links.pricing'),
 
-            href: 'https://openfasttoken.example/pricing',
+            href: 'https://fasttoken.example.com/pricing',
 
           },
 
@@ -410,7 +410,7 @@ export function Footer(props: FooterProps) {
 
             text: t('footer.columns.products.links.solutions'),
 
-            href: 'https://openfasttoken.example/docs/wiki/features-introduction/',
+            href: 'https://fasttoken.example.com/docs/wiki/features-introduction/',
 
           },
 
