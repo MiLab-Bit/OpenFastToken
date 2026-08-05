@@ -406,9 +406,25 @@ func GetUserUsedQuota(id int) (int, error) {
 	return user.UsedQuota, err
 }
 
-// DecreaseUserQuota decreases user's quota
+// DecreaseUserQuota decreases user's quota.
+// When force is false, a conditional update (WHERE quota >= ?) prevents the balance
+// from going negative and guards against concurrent oversell.
+// When force is true (e.g. admin manual adjustment/write-off), the check is skipped.
 func DecreaseUserQuota(id int, quota int, force bool) error {
-	return DB.Model(&User{}).Where("id = ?", id).Update("quota", gorm.Expr("quota - ?", quota)).Error
+	if quota <= 0 {
+		return nil
+	}
+	if force {
+		return DB.Model(&User{}).Where("id = ?", id).Update("quota", gorm.Expr("quota - ?", quota)).Error
+	}
+	result := DB.Model(&User{}).Where("id = ? AND quota >= ?", id, quota).Update("quota", gorm.Expr("quota - ?", quota))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("insufficient quota for user %d", id)
+	}
+	return nil
 }
 
 // DeltaUpdateUserQuota updates user's quota by delta
