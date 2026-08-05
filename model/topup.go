@@ -23,7 +23,19 @@ type TopUp struct {
 	CreateTime      int64   `json:"create_time"`
 	CompleteTime    int64   `json:"complete_time"`
 	Status          string  `json:"status"`
+
+	// WalletType 充值入账目标钱包：wallet=个人钱包(默认)，enterprise=企业主钱包
+	WalletType string `json:"wallet_type" gorm:"type:varchar(20);default:'wallet';index"`
+
+	// Tenant isolation (Phase 1 multi-tenancy)
+	TenantId int `json:"tenant_id" gorm:"default:0;index"`
 }
+
+// 充值入账目标钱包类型
+const (
+	WalletTypeWallet     = "wallet"
+	WalletTypeEnterprise = "enterprise"
+)
 
 // UserGift 用户赠品记录（充值赠送AI大会门票等）
 type UserGift struct {
@@ -138,6 +150,9 @@ func topUpQueryCutoff() int64 {
 }
 
 func GetUserTopUps(userId int, pageInfo *common.PageInfo) (topups []*TopUp, total int64, err error) {
+	// Phase 1 多租户：本人记录 OR 所属企业共享记录。在开启事务前取，避免事务内嵌套查询。
+	entId := GetUserEnterpriseId(userId)
+
 	// Start transaction
 	tx := DB.Begin()
 	if tx.Error != nil {
@@ -152,14 +167,14 @@ func GetUserTopUps(userId int, pageInfo *common.PageInfo) (topups []*TopUp, tota
 	cutoff := topUpQueryCutoff()
 
 	// Get total count within transaction
-	err = tx.Model(&TopUp{}).Where("user_id = ? AND create_time >= ?", userId, cutoff).Count(&total).Error
+	err = tx.Model(&TopUp{}).Where(OwnerOrTenantWhere("")+" AND create_time >= ?", userId, entId, cutoff).Count(&total).Error
 	if err != nil {
 		tx.Rollback()
 		return nil, 0, err
 	}
 
 	// Get paginated topups within same transaction
-	err = tx.Where("user_id = ? AND create_time >= ?", userId, cutoff).Order("id desc").Limit(pageInfo.GetPageSize()).Offset(pageInfo.GetStartIdx()).Find(&topups).Error
+	err = tx.Where(OwnerOrTenantWhere("")+" AND create_time >= ?", userId, entId, cutoff).Order("id desc").Limit(pageInfo.GetPageSize()).Offset(pageInfo.GetStartIdx()).Find(&topups).Error
 	if err != nil {
 		tx.Rollback()
 		return nil, 0, err
@@ -208,6 +223,9 @@ const searchTopUpCountHardLimit = 10000
 
 // SearchUserTopUps 按订单号搜索某用户的充值记录
 func SearchUserTopUps(userId int, keyword string, pageInfo *common.PageInfo) (topups []*TopUp, total int64, err error) {
+	// Phase 1 多租户：本人记录 OR 所属企业共享记录。在开启事务前取，避免事务内嵌套查询。
+	entId := GetUserEnterpriseId(userId)
+
 	tx := DB.Begin()
 	if tx.Error != nil {
 		return nil, 0, tx.Error
@@ -218,7 +236,7 @@ func SearchUserTopUps(userId int, keyword string, pageInfo *common.PageInfo) (to
 		}
 	}()
 
-	query := tx.Model(&TopUp{}).Where("user_id = ? AND create_time >= ?", userId, topUpQueryCutoff())
+	query := tx.Model(&TopUp{}).Where(OwnerOrTenantWhere("")+" AND create_time >= ?", userId, entId, topUpQueryCutoff())
 	if keyword != "" {
 		pattern, perr := sanitizeLikePattern(keyword)
 		if perr != nil {
@@ -301,6 +319,7 @@ func ManualCompleteTopUp(tradeNo string, callerIp string) error {
 	var quotaToAdd int
 	var payMoney float64
 	var paymentMethod string
+	var walletType string
 
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		topUp := &TopUp{}
@@ -335,14 +354,26 @@ func ManualCompleteTopUp(tradeNo string, callerIp string) error {
 			return err
 		}
 
-		// 增加用户额度（立即写库，保持一致性）
-		if err := tx.Model(&User{}).Where("id = ?", topUp.UserId).Update("quota", gorm.Expr("quota + ?", quotaToAdd)).Error; err != nil {
-			return err
+		// 按钱包类型分流入账：企业充值入企业主钱包，否则入个人钱包
+		if topUp.WalletType == WalletTypeEnterprise {
+			if topUp.TenantId <= 0 {
+				return errors.New("企业钱包充值订单缺少企业ID")
+			}
+			wallet := &EnterpriseWallet{EnterpriseId: topUp.TenantId}
+			if err := wallet.RechargeInTx(tx, quotaToAdd, 0, topUp.TradeNo); err != nil {
+				return err
+			}
+		} else {
+			// 增加用户额度（立即写库，保持一致性）
+			if err := tx.Model(&User{}).Where("id = ?", topUp.UserId).Update("quota", gorm.Expr("quota + ?", quotaToAdd)).Error; err != nil {
+				return err
+			}
 		}
 
 		userId = topUp.UserId
 		payMoney = topUp.Money
 		paymentMethod = topUp.PaymentMethod
+		walletType = topUp.WalletType
 		return nil
 	})
 
@@ -354,9 +385,11 @@ func ManualCompleteTopUp(tradeNo string, callerIp string) error {
 	if quotaToAdd > 0 {
 		RecordTopupLog(userId, fmt.Sprintf("管理员补单成功，充值金额: %v，支付金额：%f", logger.FormatQuota(quotaToAdd), payMoney), callerIp, paymentMethod, "admin")
 
-		// 处理推荐返利（与正常充值路径一致，确保邀请人拿到返利）
-		if err := ProcessReferralRebate(&TopUp{UserId: userId, Money: payMoney, TradeNo: tradeNo, PaymentMethod: paymentMethod}, callerIp); err != nil {
-			common.SysError("failed to process referral rebate (manual): " + err.Error())
+		// 处理推荐返利（与正常充值路径一致，确保邀请人拿到返利；企业钱包充值不参与返利）
+		if walletType != WalletTypeEnterprise {
+			if err := ProcessReferralRebate(&TopUp{UserId: userId, Money: payMoney, TradeNo: tradeNo, PaymentMethod: paymentMethod}, callerIp); err != nil {
+				common.SysError("failed to process referral rebate (manual): " + err.Error())
+			}
 		}
 	}
 	return nil
@@ -409,8 +442,19 @@ func RechargeAlipay(tradeNo string, callerIp string) (err error) {
 			return err
 		}
 
-		if err := tx.Model(&User{}).Where("id = ?", topUp.UserId).Update("quota", gorm.Expr("quota + ?", quotaToAdd)).Error; err != nil {
-			return err
+		// 按钱包类型分流入账：企业充值入企业主钱包，否则入个人钱包
+		if topUp.WalletType == WalletTypeEnterprise {
+			if topUp.TenantId <= 0 {
+				return errors.New("企业钱包充值订单缺少企业ID")
+			}
+			wallet := &EnterpriseWallet{EnterpriseId: topUp.TenantId}
+			if err := wallet.RechargeInTx(tx, quotaToAdd, 0, topUp.TradeNo); err != nil {
+				return err
+			}
+		} else {
+			if err := tx.Model(&User{}).Where("id = ?", topUp.UserId).Update("quota", gorm.Expr("quota + ?", quotaToAdd)).Error; err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -421,7 +465,7 @@ func RechargeAlipay(tradeNo string, callerIp string) (err error) {
 		return errors.New("充值失败，请稍后重试")
 	}
 
-	if quotaToAdd > 0 {
+	if quotaToAdd > 0 && topUp.WalletType != WalletTypeEnterprise {
 		RecordTopupLog(topUp.UserId, fmt.Sprintf("支付宝充值成功，充值额度: %v，支付金额: %.2f", logger.FormatQuota(quotaToAdd), topUp.Money), callerIp, topUp.PaymentMethod, PaymentMethodAlipay)
 
 		// 处理推荐返利
@@ -623,10 +667,21 @@ func RefundTopUp(tradeNo string, callerIp string) error {
 			return err
 		}
 
-		// 反向冲销用户主配额（不小于 0，避免并发下出现负数；用 CASE 保证跨 sqlite/postgres/mysql 可移植且原子）
-		if err := tx.Model(&User{}).Where("id = ?", topUp.UserId).
-			Update("quota", gorm.Expr("CASE WHEN quota - ? < 0 THEN 0 ELSE quota - ? END", quotaToReverse, quotaToReverse)).Error; err != nil {
-			return err
+		// 按钱包类型分流冲销：企业充值订单从企业主钱包扣回，否则扣个人钱包
+		if topUp.WalletType == WalletTypeEnterprise {
+			if topUp.TenantId <= 0 {
+				return errors.New("企业钱包充值订单缺少企业ID")
+			}
+			wallet := &EnterpriseWallet{EnterpriseId: topUp.TenantId}
+			if err := wallet.RefundInTx(tx, quotaToReverse, 0, topUp.TradeNo); err != nil {
+				return err
+			}
+		} else {
+			// 反向冲销用户主配额（不小于 0，避免并发下出现负数；用 CASE 保证跨 sqlite/postgres/mysql 可移植且原子）
+			if err := tx.Model(&User{}).Where("id = ?", topUp.UserId).
+				Update("quota", gorm.Expr("CASE WHEN quota - ? < 0 THEN 0 ELSE quota - ? END", quotaToReverse, quotaToReverse)).Error; err != nil {
+				return err
+			}
 		}
 
 		userId = topUp.UserId
@@ -696,8 +751,19 @@ func RechargeWechat(tradeNo string, callerIp string) (err error) {
 			return err
 		}
 
-		if err := tx.Model(&User{}).Where("id = ?", topUp.UserId).Update("quota", gorm.Expr("quota + ?", quotaToAdd)).Error; err != nil {
-			return err
+		// 按钱包类型分流入账：企业充值入企业主钱包，否则入个人钱包
+		if topUp.WalletType == WalletTypeEnterprise {
+			if topUp.TenantId <= 0 {
+				return errors.New("企业钱包充值订单缺少企业ID")
+			}
+			wallet := &EnterpriseWallet{EnterpriseId: topUp.TenantId}
+			if err := wallet.RechargeInTx(tx, quotaToAdd, 0, topUp.TradeNo); err != nil {
+				return err
+			}
+		} else {
+			if err := tx.Model(&User{}).Where("id = ?", topUp.UserId).Update("quota", gorm.Expr("quota + ?", quotaToAdd)).Error; err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -708,7 +774,7 @@ func RechargeWechat(tradeNo string, callerIp string) (err error) {
 		return errors.New("充值失败，请稍后重试")
 	}
 
-	if quotaToAdd > 0 {
+	if quotaToAdd > 0 && topUp.WalletType != WalletTypeEnterprise {
 		RecordTopupLog(topUp.UserId, fmt.Sprintf("微信支付充值成功，充值额度: %v，支付金额: %.2f", logger.FormatQuota(quotaToAdd), topUp.Money), callerIp, topUp.PaymentMethod, PaymentMethodWechat)
 
 		// 处理推荐返利
