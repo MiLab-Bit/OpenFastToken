@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'react-i18next'
 /*
-Copyright (C) 2023-2026 OpenFastToken
+Copyright (C) 2023-2026 FastToken
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -16,7 +16,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-For commercial licensing, please contact support@example.com
+For commercial licensing, please contact hello@fasttoken.example.com
 */
 import { useState, useEffect } from 'react'
 import {
@@ -73,7 +73,7 @@ interface PricingInfo {
   group?: string
 }
 
-const BASE_URL = 'https://openfasttoken.example'
+const BASE_URL = 'https://fasttoken.example.com'
 
 function buildDocSections(
   t: TFunction,
@@ -157,7 +157,7 @@ function buildDocSections(
 {`from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://openfasttoken.example/v1",
+    base_url="https://fasttoken.example.com/v1",
     api_key="YOUR_API_KEY"
 )
 
@@ -169,7 +169,7 @@ print(response.choices[0].message.content)`}
       </pre>
       <div className="absolute top-2 right-2">
         <CopyButton
-          value={`from openai import OpenAI\n\nclient = OpenAI(\n    base_url="https://openfasttoken.example/v1",\n    api_key="YOUR_API_KEY"\n)\n\nresponse = client.chat.completions.create(\n    model="deepseek-v4-pro",\n    messages=[{"role": "user", "content": "你好，请介绍一下自己"}]\n)\nprint(response.choices[0].message.content)`}
+          value={`from openai import OpenAI\n\nclient = OpenAI(\n    base_url="https://fasttoken.example.com/v1",\n    api_key="YOUR_API_KEY"\n)\n\nresponse = client.chat.completions.create(\n    model="deepseek-v4-pro",\n    messages=[{"role": "user", "content": "你好，请介绍一下自己"}]\n)\nprint(response.choices[0].message.content)`}
           variant="outline"
           className="border-stone-card bg-card size-7"
           iconClassName="size-3"
@@ -226,7 +226,7 @@ print(response.choices[0].message.content)`}
 {`from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://openfasttoken.example/v1",
+    base_url="https://fasttoken.example.com/v1",
     api_key="YOUR_API_KEY"
 )
 
@@ -253,7 +253,7 @@ for chunk in stream:
         </pre>
         <div className="absolute top-2 right-2">
           <CopyButton
-            value={`from openai import OpenAI\n\nclient = OpenAI(\n    base_url="https://openfasttoken.example/v1",\n    api_key="YOUR_API_KEY"\n)\n\nresponse = client.chat.completions.create(\n    model="deepseek-v4-pro",\n    messages=[\n        {"role": "system", "content": "你是一个数学老师"},\n        {"role": "user", "content": "什么是傅里叶变换？"}\n    ],\n    temperature=0.7,\n    max_tokens=1000\n)`}
+            value={`from openai import OpenAI\n\nclient = OpenAI(\n    base_url="https://fasttoken.example.com/v1",\n    api_key="YOUR_API_KEY"\n)\n\nresponse = client.chat.completions.create(\n    model="deepseek-v4-pro",\n    messages=[\n        {"role": "system", "content": "你是一个数学老师"},\n        {"role": "user", "content": "什么是傅里叶变换？"}\n    ],\n    temperature=0.7,\n    max_tokens=1000\n)`}
             variant="outline"
             className="border-stone-card bg-card size-7"
             iconClassName="size-3"
@@ -268,7 +268,7 @@ for chunk in stream:
         <Terminal className="w-5 h-5 text-accent-brand" />{t('cURL 示例')}</h4>
       <div className="relative">
         <pre className="bg-stone-bg rounded-lg p-4 text-xs font-mono text-stone-text overflow-x-auto leading-relaxed">
-{`curl https://openfasttoken.example/v1/chat/completions \\
+{`curl https://fasttoken.example.com/v1/chat/completions \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -d '{
@@ -278,7 +278,7 @@ for chunk in stream:
         </pre>
         <div className="absolute top-2 right-2">
           <CopyButton
-            value={`curl https://openfasttoken.example/v1/chat/completions \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer YOUR_API_KEY" \\\n  -d '{\\n    "model": "deepseek-v4-pro",\\n    "messages": [{"role": "user", "content": "你好！"}]\\n  }'`}
+            value={`curl https://fasttoken.example.com/v1/chat/completions \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer YOUR_API_KEY" \\\n  -d '{\\n    "model": "deepseek-v4-pro",\\n    "messages": [{"role": "user", "content": "你好！"}]\\n  }'`}
             variant="outline"
             className="border-stone-card bg-card size-7"
             iconClassName="size-3"
@@ -528,7 +528,7 @@ for chunk in stream:
         },
         {
           q: '如何联系技术支持？',
-          a: '通过控制台提交工单，或发送邮件至 support@example.com。工作日 9:00-18:00 提供技术支持。',
+          a: '通过控制台提交工单，或发送邮件至 hello@fasttoken.example.com。工作日 9:00-18:00 提供技术支持。',
         },
       ] as QAItem[]).map((qa, idx) => (
         <div key={idx} className="bg-card rounded-xl p-6 shadow-sm border border-stone-card
@@ -577,16 +577,16 @@ for chunk in stream:
           <div className="relative">
             <pre className="bg-stone-bg rounded-lg p-4 text-xs font-mono text-stone-text overflow-x-auto leading-relaxed">
 {`# macOS / Linux
-curl -fsSL https://openfasttoken.example/skills/install-fasttoken-skills.py -o install.py
+curl -fsSL https://fasttoken.example.com/skills/install-fasttoken-skills.py -o install.py
 python3 install.py
 
 # Windows (PowerShell)
-Invoke-WebRequest https://openfasttoken.example/skills/install-fasttoken-skills.py -OutFile install.py
+Invoke-WebRequest https://fasttoken.example.com/skills/install-fasttoken-skills.py -OutFile install.py
 python install.py`}
             </pre>
             <div className="absolute top-2 right-2">
               <CopyButton
-                value={`curl -fsSL https://openfasttoken.example/skills/install-fasttoken-skills.py -o install.py\npython3 install.py`}
+                value={`curl -fsSL https://fasttoken.example.com/skills/install-fasttoken-skills.py -o install.py\npython3 install.py`}
                 variant="outline"
                 className="border-stone-card bg-card size-7"
                 iconClassName="size-3"
