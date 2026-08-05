@@ -307,6 +307,39 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.DELETE("/performance/logs", middleware.AdminAuth(), controller.CleanupLogFiles)
 		apiRouter.GET("/perf-metrics/summary", middleware.UserAuth(), controller.GetPerfMetricsSummary)
 
+		// ==================== Agent Marketplace (L1) ====================
+		// 目录读接口公开（未登录也可浏览已发布技能）；发布接口需管理员。
+		// 注意：GET /skills/:id 与 GET /skills/:id/download 段数不同可共存；
+		// 不可再注册 /skills/<静态段> 同段路径（如 /skills/latest），会与 :id 冲突。
+		marketplaceRoute := apiRouter.Group("/marketplace")
+		{
+			marketplaceRoute.GET("/skills", controller.ListMarketplaceSkills)
+			marketplaceRoute.GET("/skills/:id", controller.GetMarketplaceSkill)
+			marketplaceRoute.GET("/skills/:id/download", controller.DownloadMarketplaceSkill)
+
+			adminSkill := marketplaceRoute.Group("")
+			adminSkill.Use(middleware.AdminAuth())
+			adminSkill.POST("/skills", controller.PublishMarketplaceSkill)
+		}
+
+		// ==================== Tenant Self-Service (member) ====================
+		// 成员自助接口：企业 ID 一律取自 c.GetInt("enterprise_id")（由 UserAuth 注入），
+		// 不接受前端传入的 enterprise_id / tenant_id，杜绝越权读取他人企业数据。
+		tenantSelfRoute := apiRouter.Group("/user/tenant")
+		tenantSelfRoute.Use(middleware.UserAuth())
+		{
+			tenantSelfRoute.GET("/info", controller.GetMyTenantInfo)
+			tenantSelfRoute.GET("/members", controller.GetMyTenantMembers)
+			// 企业钱包：余额任何成员可读，派发/回收/流水/自助充值仅企业管理员
+			tenantSelfRoute.GET("/wallet", controller.GetMyTenantWallet)
+			tenantSelfRoute.POST("/wallet/grant", controller.GrantTenantWalletQuota)
+			tenantSelfRoute.POST("/wallet/recycle", controller.RecycleTenantWalletQuota)
+			tenantSelfRoute.GET("/wallet/txns", controller.GetTenantWalletTxns)
+			// Q3 企业自助支付充值（微信/支付宝，回调复用个人充值 notify）
+			tenantSelfRoute.POST("/wallet/topup", controller.RequestEnterpriseWalletTopUp)
+			tenantSelfRoute.GET("/wallet/topup/status", controller.GetEnterpriseWalletTopUpStatus)
+		}
+
 		// ==================== Enterprise (admin) ====================
 		enterpriseRoute := apiRouter.Group("/enterprise")
 		enterpriseRoute.Use(middleware.AdminAuth())
@@ -315,6 +348,9 @@ func SetApiRouter(router *gin.Engine) {
 			enterpriseRoute.POST("/", controller.AdminCreateEnterprise)
 			enterpriseRoute.POST("/:id/approve", controller.AdminApproveEnterprise)
 			enterpriseRoute.POST("/:id/reject", controller.AdminRejectEnterprise)
+			// 平台侧企业钱包授信
+			enterpriseRoute.GET("/:id/wallet", controller.AdminGetEnterpriseWallet)
+			enterpriseRoute.POST("/:id/wallet/recharge", controller.AdminRechargeEnterpriseWallet)
 		}
 
 		// ==================== Custom OAuth Providers (admin) ====================
