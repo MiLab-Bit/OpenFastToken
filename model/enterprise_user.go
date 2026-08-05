@@ -386,6 +386,137 @@ func GetEnterpriseStats(enterpriseId int) (map[string]interface{}, error) {
 		Where("enterprise_id = ? AND role = 'admin'", enterpriseId).
 		Count(&adminCount)
 	stats["admin_count"] = adminCount
-	
+
 	return stats, nil
+}
+
+// ============================================================================
+// 企业钱包额度操作方法（Phase 1 双钱包：enterprise_user.quota 语义重定义为成员真实可用余额）
+// ============================================================================
+
+// IncreaseEUQuota 增加成员企业余额（条件更新防负）
+func IncreaseEUQuota(id int, amount int) error {
+	if amount < 0 {
+		return DecreaseEUQuota(id, -amount)
+	}
+	if amount == 0 {
+		return nil
+	}
+	res := DB.Model(&EnterpriseUser{}).Where("id = ? AND quota + ? >= 0", id, amount).
+		Update("quota", gorm.Expr("quota + ?", amount))
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("enterprise user quota update failed")
+	}
+	return nil
+}
+
+// DecreaseEUQuota 扣减成员企业余额（条件更新防负/防超卖）
+func DecreaseEUQuota(id int, amount int) error {
+	if amount <= 0 {
+		return nil
+	}
+	res := DB.Model(&EnterpriseUser{}).Where("id = ? AND quota >= ?", id, amount).
+		Update("quota", gorm.Expr("quota - ?", amount))
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("enterprise user quota insufficient")
+	}
+	return nil
+}
+
+// RecordEUUsedQuota 累加成员已用企业额度
+func RecordEUUsedQuota(id int, amount int) error {
+	if amount <= 0 {
+		return nil
+	}
+	return DB.Model(&EnterpriseUser{}).Where("id = ?", id).
+		Update("used_quota", gorm.Expr("used_quota + ?", amount)).Error
+}
+
+// ConsumeEUQuota 消费成员企业余额：扣 quota 同时累加 used_quota（单条 SQL 原子完成）。
+// 条件更新保证余额不足时不产生任何变更并返回错误。
+func ConsumeEUQuota(id int, amount int) error {
+	if amount <= 0 {
+		return nil
+	}
+	res := DB.Model(&EnterpriseUser{}).Where("id = ? AND quota >= ?", id, amount).
+		Updates(map[string]interface{}{
+			"quota":      gorm.Expr("quota - ?", amount),
+			"used_quota": gorm.Expr("used_quota + ?", amount),
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("enterprise user quota insufficient")
+	}
+	return nil
+}
+
+// RefundEUQuota 退还成员企业余额：加回 quota 同时回冲 used_quota。
+// used_quota 不足时仅回冲到 0，避免出现负值。
+func RefundEUQuota(id int, amount int) error {
+	if amount <= 0 {
+		return nil
+	}
+	return DB.Model(&EnterpriseUser{}).Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"quota":      gorm.Expr("quota + ?", amount),
+			"used_quota": gorm.Expr("CASE WHEN used_quota >= ? THEN used_quota - ? ELSE 0 END", amount, amount),
+		}).Error
+}
+
+// GetEUQuota 读取成员企业余额
+func GetEUQuota(enterpriseId int, userId int) (int, error) {
+	eu, err := GetEnterpriseUser(enterpriseId, userId)
+	if err != nil {
+		return 0, err
+	}
+	return eu.Quota, nil
+}
+
+// GetEUQuotaById 按 enterprise_user 主键读取成员企业余额（选路热路径，只取单列）
+func GetEUQuotaById(id int) (int, error) {
+	if id <= 0 {
+		return 0, errors.New("invalid enterprise user id")
+	}
+	var quota int
+	err := DB.Model(&EnterpriseUser{}).Where("id = ?", id).Select("quota").Scan(&quota).Error
+	return quota, err
+}
+
+// EnterpriseMembership 用户的有效企业成员身份快照（选路用，一次查询取全）
+type EnterpriseMembership struct {
+	EnterpriseUserId int
+	EnterpriseId     int
+	Quota            int
+	Role             string
+}
+
+// GetActiveEnterpriseMembership 查询用户当前生效的企业成员身份。
+// 用户不属于任何企业或成员状态非 active 时返回 (nil, nil)，不视为错误。
+func GetActiveEnterpriseMembership(userId int) (*EnterpriseMembership, error) {
+	if userId <= 0 {
+		return nil, nil
+	}
+	var eu EnterpriseUser
+	err := DB.Where("user_id = ? AND status = ?", userId, "active").
+		Order("id ASC").First(&eu).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &EnterpriseMembership{
+		EnterpriseUserId: eu.Id,
+		EnterpriseId:     eu.EnterpriseId,
+		Quota:            eu.Quota,
+		Role:             eu.Role,
+	}, nil
 }
