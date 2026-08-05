@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023-2026 OpenFastToken
+Copyright (C) 2023-2026 FastToken
 */
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
