@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023-2026 OpenFastToken
+Copyright (C) 2023-2026 FastToken
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -14,7 +14,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-For commercial licensing, please contact support@example.com
+For commercial licensing, please contact hello@fasttoken.example.com
 */
 import { api } from '@/lib/api'
 import type {
@@ -195,6 +195,55 @@ export async function getUserBillingHistory(
     params.append('keyword', keyword)
   }
   const res = await api.get(`/api/user/topup/self?${params.toString()}`)
+  return res.data
+}
+
+// ============================================================================
+// Enterprise (Tenant) Wallet API
+//
+// Backend resolves the tenant from the authenticated session — the client
+// never sends an enterprise id. Safe against cross-tenant enumeration.
+// ============================================================================
+
+/**
+ * Fetch the current user's enterprise wallet view (member quota + admin main wallet).
+ */
+export async function getTenantWallet(): Promise<TenantWalletResponse> {
+  const res = await api.get('/api/user/tenant/wallet')
+  return res.data
+}
+
+/**
+ * Enterprise admin grants quota from the main wallet to a member.
+ */
+export async function grantTenantQuota(
+  userId: number,
+  quota: number
+): Promise<ApiResponse> {
+  const res = await api.post('/api/user/tenant/wallet/grant', {
+    user_id: userId,
+    quota,
+  })
+  return res.data
+}
+
+/**
+ * Enterprise admin self-recharges the main wallet (WeChat native / Alipay).
+ */
+export async function requestEnterpriseTopup(
+  amount: number,
+  paymentMethod: 'wechat' | 'alipay'
+): Promise<EnterpriseTopupResponse> {
+  const res = await api.post(
+    '/api/user/tenant/wallet/topup',
+    {
+      amount,
+      payment_method: paymentMethod === 'wechat' ? 'wxpay' : 'alipay',
+    },
+    {
+      skipBusinessError: true,
+    } as Record<string, unknown>
+  )
   return res.data
 }
 
