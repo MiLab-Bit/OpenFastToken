@@ -257,6 +257,10 @@ func (s *BillingSession) syncRelayInfo() {
 	info := s.relayInfo
 	info.FinalPreConsumedQuota = s.preConsumedQuota
 	info.BillingSource = s.funding.Source()
+	// 记录实际选中的企业成员 ID，供异步任务原路退款
+	if cf, ok := s.funding.(*CompositeFunding); ok {
+		info.EnterpriseUserId = cf.ActiveEnterpriseUserId()
+	}
 	info.SubscriptionId = 0
 	info.SubscriptionPreConsumed = 0
 }

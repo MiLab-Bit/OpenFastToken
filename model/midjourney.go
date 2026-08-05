@@ -23,6 +23,9 @@ type Midjourney struct {
 	Quota       int    `json:"quota"`
 	Buttons     string `json:"buttons"`
 	Properties  string `json:"properties"`
+	// 双钱包计费上下文：失败退款必须原路返回，不可跨钱包
+	BillingSource    string `json:"billing_source" gorm:"type:varchar(20);default:'wallet'"`
+	EnterpriseUserId int    `json:"enterprise_user_id" gorm:"default:0"`
 }
 
 // TaskQueryParams 用于包含所有搜索条件的结构体，可以根据需求添加更多字段

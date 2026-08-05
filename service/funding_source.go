@@ -204,6 +204,15 @@ func (c *CompositeFunding) Source() string {
 	return c.active.Source()
 }
 
+// ActiveEnterpriseUserId 返回本次请求实际选中的 enterprise_user.id。
+// 未选中企业钱包时返回 0。异步任务据此把退款原路退回企业钱包。
+func (c *CompositeFunding) ActiveEnterpriseUserId() int {
+	if c.enterprise == nil || c.active != FundingSource(c.enterprise) {
+		return 0
+	}
+	return c.enterprise.euId
+}
+
 // selectByBalance 在无需实际扣款时（amount == 0）按余额预选路径
 func (c *CompositeFunding) selectByBalance() {
 	if c.active != nil {
