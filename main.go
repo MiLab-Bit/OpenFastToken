@@ -14,27 +14,27 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/MiLab-Bit/OpenFastToken/common"
-	"github.com/MiLab-Bit/OpenFastToken/common/circuitbreaker"
-	"github.com/MiLab-Bit/OpenFastToken/common/cooldown"
-	"github.com/MiLab-Bit/OpenFastToken/common/credential"
-	semcache "github.com/MiLab-Bit/OpenFastToken/common/semantic_cache"
-	"github.com/MiLab-Bit/OpenFastToken/common/weightedlb"
-	"github.com/MiLab-Bit/OpenFastToken/common/workerpool"
-	"github.com/MiLab-Bit/OpenFastToken/constant"
-	"github.com/MiLab-Bit/OpenFastToken/controller"
-	"github.com/MiLab-Bit/OpenFastToken/di"
-	"github.com/MiLab-Bit/OpenFastToken/i18n"
-	"github.com/MiLab-Bit/OpenFastToken/logger"
-	"github.com/MiLab-Bit/OpenFastToken/middleware"
-	"github.com/MiLab-Bit/OpenFastToken/model"
-	"github.com/MiLab-Bit/OpenFastToken/oauth"
-	perfmetrics "github.com/MiLab-Bit/OpenFastToken/pkg/perf_metrics"
-	"github.com/MiLab-Bit/OpenFastToken/relay"
-	"github.com/MiLab-Bit/OpenFastToken/router"
-	"github.com/MiLab-Bit/OpenFastToken/service"
-	_ "github.com/MiLab-Bit/OpenFastToken/setting/performance_setting"
-	"github.com/MiLab-Bit/OpenFastToken/setting/ratio_setting"
+	"www.abc-ai.cn/FastToken/common"
+	"www.abc-ai.cn/FastToken/common/circuitbreaker"
+	"www.abc-ai.cn/FastToken/common/cooldown"
+	"www.abc-ai.cn/FastToken/common/credential"
+	semcache "www.abc-ai.cn/FastToken/common/semantic_cache"
+	"www.abc-ai.cn/FastToken/common/weightedlb"
+	"www.abc-ai.cn/FastToken/common/workerpool"
+	"www.abc-ai.cn/FastToken/constant"
+	"www.abc-ai.cn/FastToken/controller"
+	"www.abc-ai.cn/FastToken/di"
+	"www.abc-ai.cn/FastToken/i18n"
+	"www.abc-ai.cn/FastToken/logger"
+	"www.abc-ai.cn/FastToken/middleware"
+	"www.abc-ai.cn/FastToken/model"
+	"www.abc-ai.cn/FastToken/oauth"
+	perfmetrics "www.abc-ai.cn/FastToken/pkg/perf_metrics"
+	"www.abc-ai.cn/FastToken/relay"
+	"www.abc-ai.cn/FastToken/router"
+	"www.abc-ai.cn/FastToken/service"
+	_ "www.abc-ai.cn/FastToken/setting/performance_setting"
+	"www.abc-ai.cn/FastToken/setting/ratio_setting"
 
 	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/gin-contrib/sessions"
@@ -43,7 +43,7 @@ import (
 	"github.com/joho/godotenv"
 
 	_ "net/http/pprof"
-	"github.com/MiLab-Bit/OpenFastToken/common/tracing"
+	"www.abc-ai.cn/FastToken/common/tracing"
 )
 
 //go:embed web/default/dist
@@ -235,7 +235,7 @@ func main() {
 		common.SysLog(fmt.Sprintf("panic detected: %v", err))
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
-				"message": fmt.Sprintf("Panic detected, error: %v. Please submit a issue here: https://github.com/MiLab-Bit/OpenFastToken", err),
+				"message": fmt.Sprintf("Panic detected, error: %v. Please submit a issue here: https://www.abc-ai.cn/FastToken", err),
 				"type":    "FastToken_panic",
 			},
 		})
