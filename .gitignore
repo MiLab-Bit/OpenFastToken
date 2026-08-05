@@ -1,34 +1,60 @@
-# Binaries (compiled artifacts, not source)
+# ============ 二进制与构建产物 ============
 /fasttoken
-*.bak
-*.bak2
-*.bak3
-fasttoken.broken
-fasttoken.old2
-fasttoken.bak_passwordfix
+/fasttoken.bak.*
+/fasttoken_linux
+/ft.new
+*.exe
 
-# Frontend build output (regenerated from web/default/src)
-/web/default/dist/
+# ============ 依赖（3.4G，绝不入库）============
+node_modules/
+web/default/node_modules/
 
-# Secrets & env
+# ============ 前端缓存与测试报告 ============
+web/default/coverage/
+web/default/.rsbuild/
+web/default/test-results/
+web/default/playwright-report/
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# 不要忽略 web/default/dist ！
+# main.go 用 //go:embed web/default/dist 把前端打进二进制，
+# dist 是「编译输入」而非「构建产物」。忽略它 = 全新 clone 无法 go build。
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+# ============ 机密（.env 含支付宝/微信支付私钥）============
 .env
+.env.local
+.env.*.local
 cert/
+*.pem
+*.p12
+*.pfx
+/*.key
 
-# Logs
+# ============ 日志与运行时 ============
 logs/
 *.log
+*.pid
+/tmp/
 
-# User uploads
-/uploads/
+# ============ 历史「手工版本管理」残留 ============
+# 已归档至 /var/backups/fasttoken/legacy-bak-*.tar.gz
+*.bak
+*.bak.*
+*.bak2
+*.backup
+*.orig
+*.old
+*.rej
 
-# Leftover SQLite db
+# ============ 本地数据库文件 ============
+*.db
 FastToken.db
+fasttoken.db
 
-# Root-level one-off sql (keep migrations/ dir)
-/*.sql
-
-# OS
+# ============ 编辑器 / 系统 ============
 .DS_Store
-fasttoken.bak*
-.env.bak.*
-web/default/dist.old/
+.idea/
+.vscode/
+*.swp
+pprof/
