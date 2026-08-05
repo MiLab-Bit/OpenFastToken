@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/MiLab-Bit/OpenFastToken/common"
-	"github.com/MiLab-Bit/OpenFastToken/constant"
-	"github.com/MiLab-Bit/OpenFastToken/pkg/billingexpr"
+	"www.abc-ai.cn/FastToken/common"
+	"www.abc-ai.cn/FastToken/constant"
+	"www.abc-ai.cn/FastToken/pkg/billingexpr"
 )
 
 // TestBillingOnboardingIntegration exercises a realistic, cross-package flow:
