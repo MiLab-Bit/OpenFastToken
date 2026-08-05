@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023-2026 OpenFastToken
+Copyright (C) 2023-2026 FastToken
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -14,7 +14,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-For commercial licensing, please contact support@example.com
+For commercial licensing, please contact hello@fasttoken.example.com
 */
 import { Shield, Zap, Lock, Globe } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -69,7 +69,7 @@ export function HeroBrandShowcase({ className }: HeroBrandShowcaseProps) {
             <div className='flex items-center justify-center'>
               <img
                 src='/zhiqihui-logo.jpg'
-                alt='OpenFastToken'
+                alt='FastToken'
                 className='h-20 w-auto object-contain md:h-24 lg:h-28'
               />
             </div>
@@ -78,7 +78,7 @@ export function HeroBrandShowcase({ className }: HeroBrandShowcaseProps) {
           {/* Tagline */}
           <div className='mt-8 text-center md:mt-10'>
             <p className='mx-auto max-w-2xl text-sm leading-relaxed text-[#6b6b6b] md:text-base lg:text-lg'>
-              {t('中国电信与OpenFastToken强强联合，为企业提供安全、稳定、高效的 AI 服务基础设施，助力数字化转型')}
+              {t('中国电信与FastToken强强联合，为企业提供安全、稳定、高效的 AI 服务基础设施，助力数字化转型')}
             </p>
           </div>
 
