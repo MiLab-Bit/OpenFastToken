@@ -147,8 +147,11 @@ mv /tmp/ft.new "$BIN"
 chmod +x "$BIN"
 
 # 收紧密钥文件权限（非破坏性，仅提权）
+# 注意：服务以 fasttoken 用户运行，cert/wechat 必须 chown 到 fasttoken，否则 600 权限会拒绝服务读取 → 微信验签器构建失败
 chmod 600 /opt/fasttoken/.env 2>/dev/null || true
-chmod 600 /opt/fasttoken/cert/wechat/pub_key.pem 2>/dev/null || true
+chown -R fasttoken:fasttoken /opt/fasttoken/cert/wechat 2>/dev/null || true
+chmod 700 /opt/fasttoken/cert/wechat 2>/dev/null || true
+chmod 600 /opt/fasttoken/cert/wechat/*.pem 2>/dev/null || true
 
 echo "[deploy] restart fasttoken"
 systemctl restart fasttoken
