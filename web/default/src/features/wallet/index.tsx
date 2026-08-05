@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023-2026 OpenFastToken
+Copyright (C) 2023-2026 FastToken
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -14,7 +14,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-For commercial licensing, please contact support@example.com
+For commercial licensing, please contact hello@fasttoken.example.com
 */
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -31,6 +31,7 @@ import { WechatQrDialog } from './components/dialogs/wechat-qr-dialog'
 import { RechargeFormCard } from './components/recharge-form-card'
 import { SubscriptionPlansCard } from './components/subscription-plans-card'
 import { WalletStatsCard } from './components/wallet-stats-card'
+import { EnterpriseWalletCard } from './components/enterprise-wallet-card'
 import { UsageStatsCard } from './components/usage-stats-card'
 import { RecentRequestsCard } from './components/recent-requests-card'
 import { MyGiftsCard } from './components/my-gifts-card'
@@ -272,6 +273,9 @@ export function Wallet(props: WalletProps) {
         <SectionPageLayout.Content>
           <div className='mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-5'>
             <WalletStatsCard user={user} loading={userLoading} />
+
+            {/* Enterprise wallet card — shown for enterprise members */}
+            <EnterpriseWalletCard enterpriseId={user?.enterprise_id} />
 
             {/* Low balance warning banner */}
             {user && user.quota > 0 && user.quota < 100000 && (
