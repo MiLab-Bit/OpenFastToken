@@ -205,28 +205,16 @@ func (s *BillingSession) preConsume(c *gin.Context, quota int) *types.FastTokenE
 	return nil
 }
 
+// reserveFunding 通过 FundingSource 接口追加预扣，不再依赖具体实现类型（P0-4）。
 func (s *BillingSession) reserveFunding(delta int) error {
-	funding, ok := s.funding.(*WalletFunding)
-	if !ok {
-		return types.NewError(fmt.Errorf("unsupported funding source: %s", s.funding.Source()), types.ErrorCodeUpdateDataError, types.ErrOptionWithSkipRetry())
-	}
-	if err := model.DecreaseUserQuota(funding.userId, delta, false); err != nil {
+	if err := s.funding.Reserve(delta); err != nil {
 		return types.NewError(err, types.ErrorCodeUpdateDataError, types.ErrOptionWithSkipRetry())
 	}
-	funding.consumed += delta
 	return nil
 }
 
 func (s *BillingSession) rollbackFundingReserve(delta int) {
-	funding, ok := s.funding.(*WalletFunding)
-	if !ok {
-		return
-	}
-	if err := model.IncreaseUserQuota(funding.userId, delta, false); err != nil {
-		common.SysLog("error rolling back wallet funding reserve: " + err.Error())
-	} else {
-		funding.consumed -= delta
-	}
+	s.funding.RollbackReserve(delta)
 }
 
 func (s *BillingSession) reserveToken(delta int) error {
@@ -269,6 +257,10 @@ func (s *BillingSession) syncRelayInfo() {
 	info := s.relayInfo
 	info.FinalPreConsumedQuota = s.preConsumedQuota
 	info.BillingSource = s.funding.Source()
+	// 记录实际选中的企业成员 ID，供异步任务原路退款
+	if cf, ok := s.funding.(*CompositeFunding); ok {
+		info.EnterpriseUserId = cf.ActiveEnterpriseUserId()
+	}
 	info.SubscriptionId = 0
 	info.SubscriptionPreConsumed = 0
 }
@@ -283,28 +275,48 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		return nil, types.NewError(fmt.Errorf("relayInfo is nil"), types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())
 	}
 
-	// 钱包路径需要先检查用户额度
+	// 个人钱包余额
 	userQuota, err := model.GetUserQuota(relayInfo.UserId, false)
 	if err != nil {
 		return nil, types.NewError(err, types.ErrorCodeQueryDataError, types.ErrOptionWithSkipRetry())
 	}
-	if userQuota <= 0 {
+
+	// 企业成员身份：查询失败降级为纯个人钱包，不阻断请求
+	membership, mErr := model.GetActiveEnterpriseMembership(relayInfo.UserId)
+	if mErr != nil {
+		common.SysLog(fmt.Sprintf("error querying enterprise membership for user %d, fallback to personal wallet: %s",
+			relayInfo.UserId, mErr.Error()))
+		membership = nil
+	}
+	enterpriseQuota := 0
+	if membership != nil {
+		enterpriseQuota = membership.Quota
+	}
+
+	// 单请求不跨钱包拆分，因此本次请求的可用上限取两者较大值
+	availableQuota := userQuota
+	if enterpriseQuota > availableQuota {
+		availableQuota = enterpriseQuota
+	}
+	if availableQuota <= 0 {
 		return nil, types.NewErrorWithStatusCode(
-			fmt.Errorf("用户额度不足, 剩余额度: %s", logger.FormatQuota(userQuota)),
+			fmt.Errorf("额度不足, 个人钱包: %s, 企业钱包: %s", logger.FormatQuota(userQuota), logger.FormatQuota(enterpriseQuota)),
 			types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 			types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 	}
-	if userQuota-preConsumedQuota < 0 {
+	if availableQuota-preConsumedQuota < 0 {
 		return nil, types.NewErrorWithStatusCode(
-			fmt.Errorf("预扣费额度失败, 用户剩余额度: %s, 需要预扣费额度: %s", logger.FormatQuota(userQuota), logger.FormatQuota(preConsumedQuota)),
+			fmt.Errorf("预扣费额度失败, 可用额度: %s (个人 %s / 企业 %s), 需要预扣费额度: %s",
+				logger.FormatQuota(availableQuota), logger.FormatQuota(userQuota),
+				logger.FormatQuota(enterpriseQuota), logger.FormatQuota(preConsumedQuota)),
 			types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 			types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 	}
-	relayInfo.UserQuota = userQuota
+	relayInfo.UserQuota = availableQuota
 
 	session := &BillingSession{
 		relayInfo: relayInfo,
-		funding:   &WalletFunding{userId: relayInfo.UserId},
+		funding:   NewCompositeFunding(relayInfo.UserId, membership),
 	}
 	if apiErr := session.preConsume(c, preConsumedQuota); apiErr != nil {
 		return nil, apiErr
