@@ -46,15 +46,15 @@ func (e *Enterprise) TableName() string {
 	return "enterprise"
 }
 
-// GetDiscountRate 获取企业折扣率
+// GetDiscountRate 获取企业折扣率（与个人会员折扣同源：认证通过即 platinum 9折）
 func (e *Enterprise) GetDiscountRate() float64 {
 	switch e.MembershipLevel {
-	case "silver":
-		return 0.8 // 8折
-	case "gold":
-		return 0.7 // 7折
-	case "platinum":
-		return 0.6 // 6折
+	case string(MembershipSilver):
+		return float64(SilverDiscount) // 9.8折
+	case string(MembershipGold):
+		return float64(GoldDiscount) // 9.5折
+	case string(MembershipPlatinum):
+		return float64(PlatinumDiscount) // 9折
 	default:
 		return 1.0 // 无折扣
 	}
@@ -185,11 +185,10 @@ func ApproveEnterprise(id int, approvedBy int) error {
 		return err
 	}
 
-	// 2. 企业认证邀请码：审批时核销（绑定企业、标记已用），并以邀请码等级提升授予等级
-	grantedLevel := enterprise.MembershipLevel
+	// 2. 企业认证邀请码：审批时核销（绑定企业、标记已用）
+	// 注意：用户会员等级不由邀请码决定（Q2 决策：认证通过即最高等级 platinum）
 	if enterprise.InvitationCode != "" {
 		if code, cerr := GetInvitationCodeByCode(enterprise.InvitationCode); cerr == nil {
-			grantedLevel = HigherMembershipLevel(grantedLevel, code.Type)
 			code.EnterpriseId = enterprise.Id
 			code.UsedBy = enterprise.UserId
 			code.UsedAt = now
@@ -198,14 +197,15 @@ func ApproveEnterprise(id int, approvedBy int) error {
 		}
 	}
 
-	// 3. 回写用户：关联企业 + 会员等级（只升不降）
+	// 3. 回写用户：关联企业 + 会员等级（企业认证通过自动升级为最高等级 platinum，永久有效）
+	// Q2 决策：企业认证通过即最高等级，不依赖邀请码等级，也不单独写升级逻辑
 	if enterprise.UserId > 0 {
 		user, err := GetUserById(enterprise.UserId, true)
 		if err == nil {
 			user.EnterpriseId = enterprise.Id
-			newLevel := HigherMembershipLevel(user.MembershipLevel, grantedLevel)
-			if membershipRank[newLevel] > membershipRank[user.MembershipLevel] {
-				// 本次确实因企业认证提升了等级 → 设为永久有效
+			newLevel := string(MembershipPlatinum)
+			if membershipRank[newLevel] >= membershipRank[user.MembershipLevel] {
+				// 只升不降；企业认证通过则确保永久有效
 				user.MembershipLevel = newLevel
 				user.MembershipExpire = 0
 			}
@@ -226,14 +226,15 @@ func ApproveEnterprise(id int, approvedBy int) error {
 		}
 	}
 
-	// 4. 更新企业审核状态
+	// 4. 更新企业审核状态（认证通过即企业实体也升至最高等级 platinum）
 	return DB.Model(&Enterprise{}).
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"status":      "approved",
-			"approved_at": now,
-			"approved_by": approvedBy,
-			"updated_at":  now,
+			"status":           "approved",
+			"membership_level": string(MembershipPlatinum),
+			"approved_at":      now,
+			"approved_by":      approvedBy,
+			"updated_at":       now,
 		}).Error
 }
 
