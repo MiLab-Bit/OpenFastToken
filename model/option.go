@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/gorm"
 	"github.com/MiLab-Bit/OpenFastToken/common"
 	"github.com/MiLab-Bit/OpenFastToken/setting"
 	"github.com/MiLab-Bit/OpenFastToken/setting/config"
@@ -12,7 +13,6 @@ import (
 	"github.com/MiLab-Bit/OpenFastToken/setting/performance_setting"
 	"github.com/MiLab-Bit/OpenFastToken/setting/ratio_setting"
 	"github.com/MiLab-Bit/OpenFastToken/setting/system_setting"
-	"gorm.io/gorm"
 )
 
 type Option struct {
@@ -174,14 +174,18 @@ func InitOptionMap() {
 	LoadOptionsFromDatabase()
 }
 
-func LoadOptionsFromDatabase() {
-	options, _ := AllOption()
+func LoadOptionsFromDatabase() error {
+	options, err := AllOption()
+	if err != nil {
+		// 不再吞错：DB 抖动时静默加载空配置会清空热更新后的配置，必须让调用方知道
+		return err
+	}
 	for _, option := range options {
-		err := updateOptionMap(option.Key, option.Value)
-		if err != nil {
+		if err := updateOptionMap(option.Key, option.Value); err != nil {
 			common.SysLog("failed to update option map: " + err.Error())
 		}
 	}
+	return nil
 }
 
 func SyncOptions(frequency int) {
