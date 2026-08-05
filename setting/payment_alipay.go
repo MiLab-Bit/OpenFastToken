@@ -12,7 +12,7 @@ var (
 	AlipayPrivateKeyPath string = getEnvOrDefault("ALIPAY_PRIVATE_KEY_PATH", "cert/alipay/private_key.pem")
 	AlipayPublicKey      string = "" // 优先使用文件路径
 	AlipayPublicKeyPath  string = getEnvOrDefault("ALIPAY_PUBLIC_KEY_PATH", "cert/alipay/public_key.pem")
-	AlipaySellerId       string = getEnvOrDefault("ALIPAY_SELLER_ID", "2088680740085323")
+	AlipaySellerId       string = getEnvOrDefault("ALIPAY_SELLER_ID", "your-alipay-seller-id")
 	AlipaySandbox        bool   = getEnvBool("ALIPAY_SANDBOX", false)
 	AlipayNotifyUrl      string = getEnvOrDefault("ALIPAY_NOTIFY_URL", "")
 	AlipayUnitPrice      float64 = getEnvFloat("ALIPAY_UNIT_PRICE", 1.0)
