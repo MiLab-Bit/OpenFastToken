@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/MiLab-Bit/OpenFastToken/common"
@@ -50,20 +51,32 @@ func GetIntOption(key string, def int) int {
 // 选项表（含倍率覆盖）→ 数据库定价表 → 本地化覆盖 → 失效定价缓存。
 // 供管理员「重载配置」端点调用。
 func ReloadAll() error {
-	LoadOptionsFromDatabase()
+	var errs []error
+	// 选项表：LoadOptionsFromDatabase 现在返回 error，DB 抖动时不再静默
+	if err := LoadOptionsFromDatabase(); err != nil {
+		common.SysError("reload options: " + err.Error())
+		errs = append(errs, err)
+	}
 	// 活动框架：热加载时也确保 activities 表已 seed（仅首次生效，幂等）。
 	if err := SeedDefaultActivities(); err != nil {
 		common.SysError("reload seed activities: " + err.Error())
+		errs = append(errs, err)
 	}
 	if err := LoadModelPricingIntoRatioSetting(); err != nil {
 		common.SysError("reload model_pricing: " + err.Error())
+		errs = append(errs, err)
 	}
 	if err := ReloadI18nCache(); err != nil {
 		common.SysError("reload i18n: " + err.Error())
+		errs = append(errs, err)
 	}
 	if err := ReloadUiSkinsCache(); err != nil {
 		common.SysError("reload ui_skins: " + err.Error())
+		errs = append(errs, err)
 	}
 	InvalidatePricingCache()
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
 	return nil
 }
