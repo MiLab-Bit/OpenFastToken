@@ -38,6 +38,12 @@ type Log struct {
 	RequestId         string `json:"request_id,omitempty" gorm:"type:varchar(64);index:idx_logs_request_id;default:''"`
 	UpstreamRequestId string `json:"upstream_request_id,omitempty" gorm:"type:varchar(128);index:idx_logs_upstream_request_id;default:''"`
 	Other             string `json:"other"`
+
+	// Tenant isolation (Phase 1 multi-tenancy)
+	TenantId int `json:"tenant_id" gorm:"default:0;index"`
+
+	// 资金来源：wallet（个人钱包）/ enterprise_wallet（企业钱包）；双钱包分账与退款原路返回用
+	FundingSource string `json:"funding_source" gorm:"type:varchar(20);default:'wallet'"`
 }
 
 // don't use iota, avoid change log type value
@@ -84,6 +90,8 @@ func RecordLog(userId int, logType int, content string) {
 		CreatedAt: common.GetTimestamp(),
 		Type:      logType,
 		Content:   content,
+		// Phase 1 多租户：低频路径，单列索引查询开销可忽略
+		TenantId: GetUserEnterpriseId(userId),
 	}
 	err := LOG_DB.Create(log).Error
 	if err != nil {
@@ -103,6 +111,8 @@ func RecordLogWithAdminInfo(userId int, logType int, content string, adminInfo m
 		CreatedAt: common.GetTimestamp(),
 		Type:      logType,
 		Content:   content,
+		// Phase 1 多租户：低频管理操作路径
+		TenantId: GetUserEnterpriseId(userId),
 	}
 	if len(adminInfo) > 0 {
 		other := map[string]interface{}{
@@ -136,6 +146,8 @@ func RecordTopupLog(userId int, content string, callerIp string, paymentMethod s
 		Content:   content,
 		Ip:        callerIp,
 		Other:     common.MapToJsonStr(other),
+		// Phase 1 多租户：充值为低频路径
+		TenantId: GetUserEnterpriseId(userId),
 	}
 	err := LOG_DB.Create(log).Error
 	if err != nil {
@@ -182,6 +194,8 @@ func RecordErrorLog(c *gin.Context, userId int, channelId int, modelName string,
 		RequestId:         requestId,
 		UpstreamRequestId: upstreamRequestId,
 		Other:             otherStr,
+		// Phase 1 多租户：relay 路径由 middleware 注入 enterprise_id，无需 DB 查询
+		TenantId: c.GetInt("enterprise_id"),
 	}
 	err := LOG_DB.Create(log).Error
 	if err != nil {
@@ -202,6 +216,11 @@ type RecordConsumeLogParams struct {
 	IsStream         bool                   `json:"is_stream"`
 	Group            string                 `json:"group"`
 	Other            map[string]interface{} `json:"other"`
+	// TenantId 为 Phase 1 多租户透传字段。调用方可显式指定；
+	// 留空（0）时由 RecordConsumeLog / RecordConsumeLogAsync 自行兜底解析。
+	TenantId int `json:"tenant_id"`
+	// FundingSource 资金来源标识：wallet / enterprise_wallet
+	FundingSource string `json:"funding_source"`
 }
 
 func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams) {
@@ -219,6 +238,11 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 		if settingMap.RecordIpLog {
 			needRecordIp = true
 		}
+	}
+	// Phase 1 多租户：热路径禁止 DB 查询。优先取调用方透传值，否则取 middleware 注入的 ctx 值。
+	tenantId := params.TenantId
+	if tenantId == 0 {
+		tenantId = c.GetInt("enterprise_id")
 	}
 	log := &Log{
 		UserId:           userId,
@@ -245,6 +269,8 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 		RequestId:         requestId,
 		UpstreamRequestId: upstreamRequestId,
 		Other:             otherStr,
+		TenantId:          tenantId,
+		FundingSource:     params.FundingSource,
 	}
 	err := LOG_DB.Create(log).Error
 	if err != nil {
@@ -258,15 +284,16 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 }
 
 type RecordTaskBillingLogParams struct {
-	UserId    int
-	LogType   int
-	Content   string
-	ChannelId int
-	ModelName string
-	Quota     int
-	TokenId   int
-	Group     string
-	Other     map[string]interface{}
+	UserId        int
+	LogType       int
+	Content       string
+	ChannelId     int
+	ModelName     string
+	Quota         int
+	TokenId       int
+	Group         string
+	Other         map[string]interface{}
+	FundingSource string
 }
 
 func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
@@ -293,6 +320,9 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 		TokenId:   params.TokenId,
 		Group:     params.Group,
 		Other:     common.MapToJsonStr(params.Other),
+		// Phase 1 多租户：任务计费为低频路径，无 ctx，走单列索引查询
+		TenantId:      GetUserEnterpriseId(params.UserId),
+		FundingSource: params.FundingSource,
 	}
 	err := LOG_DB.Create(log).Error
 	if err != nil {
@@ -389,11 +419,15 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 
 
 func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, startIdx int, num int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
+	// Phase 1 多租户：本人资源 OR 所属企业共享资源。个人用户 entId=0 时后半恒假，行为与改动前等价。
+	entId := GetUserEnterpriseId(userId)
 	var tx *gorm.DB
 	if logType == LogTypeUnknown {
-		tx = LOG_DB.Where("logs.user_id = ?", userId)
+		tx = LOG_DB.Where(OwnerOrTenantWhere("logs."), userId, entId)
 	} else {
-		tx = LOG_DB.Where("logs.user_id = ? and logs.type = ?", userId, logType)
+		// OwnerOrTenantWhere 自带外层括号，务必保留：
+		// 否则 "A OR B AND type=?" 会被解析成 "A OR (B AND type=?)"，放行他人日志。
+		tx = LOG_DB.Where(OwnerOrTenantWhere("logs.")+" AND logs.type = ?", userId, entId, logType)
 	}
 
 	if modelName != "" {
@@ -492,6 +526,66 @@ func SumUsedQuota(logType int, startTimestamp int64, endTimestamp int64, modelNa
 	}
 	if err := rpmTpmQuery.Scan(&stat).Error; err != nil {
 		common.SysError("failed to query rpm/tpm stat: " + err.Error())
+		return stat, errors.New("查询统计数据失败")
+	}
+
+	return stat, nil
+}
+
+// SumUsedQuotaSelf 统计当前用户（含其所属企业共享资源）的用量。
+// 与 SumUsedQuota 的区别：按 user_id/tenant_id 过滤而非 username，
+// 从而与 GetUserLogs 的租户可见性口径保持一致。
+// SumUsedQuota 同时服务管理员全局视图（GetLogsStat），不可原地改签名，故另起本函数。
+func SumUsedQuotaSelf(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, channel int, group string) (stat Stat, err error) {
+	// Phase 1 多租户：本人资源 OR 所属企业共享资源。个人用户 entId=0 时后半恒假。
+	entId := GetUserEnterpriseId(userId)
+
+	tx := LOG_DB.Table("logs").Select("sum(quota) quota").Where(OwnerOrTenantWhere(""), userId, entId)
+
+	// 为rpm和tpm创建单独的查询
+	rpmTpmQuery := LOG_DB.Table("logs").Select("count(*) rpm, sum(prompt_tokens) + sum(completion_tokens) tpm").
+		Where(OwnerOrTenantWhere(""), userId, entId)
+
+	if tokenName != "" {
+		tx = tx.Where("token_name = ?", tokenName)
+		rpmTpmQuery = rpmTpmQuery.Where("token_name = ?", tokenName)
+	}
+	if startTimestamp != 0 {
+		tx = tx.Where("created_at >= ?", startTimestamp)
+	}
+	if endTimestamp != 0 {
+		tx = tx.Where("created_at <= ?", endTimestamp)
+	}
+	if modelName != "" {
+		modelNamePattern, err := sanitizeLikePattern(modelName)
+		if err != nil {
+			return stat, err
+		}
+		tx = tx.Where("model_name LIKE ? ESCAPE '!'", modelNamePattern)
+		rpmTpmQuery = rpmTpmQuery.Where("model_name LIKE ? ESCAPE '!'", modelNamePattern)
+	}
+	if channel != 0 {
+		tx = tx.Where("channel_id = ?", channel)
+		rpmTpmQuery = rpmTpmQuery.Where("channel_id = ?", channel)
+	}
+	if group != "" {
+		tx = tx.Where(logGroupCol+" = ?", group)
+		rpmTpmQuery = rpmTpmQuery.Where(logGroupCol+" = ?", group)
+	}
+
+	tx = tx.Where("type = ?", LogTypeConsume)
+	rpmTpmQuery = rpmTpmQuery.Where("type = ?", LogTypeConsume)
+
+	// 只统计最近60秒的rpm和tpm
+	rpmTpmQuery = rpmTpmQuery.Where("created_at >= ?", time.Now().Add(-60*time.Second).Unix())
+
+	// 执行查询
+	if err := tx.Scan(&stat).Error; err != nil {
+		common.SysError("failed to query self log stat: " + err.Error())
+		return stat, errors.New("查询统计数据失败")
+	}
+	if err := rpmTpmQuery.Scan(&stat).Error; err != nil {
+		common.SysError("failed to query self rpm/tpm stat: " + err.Error())
 		return stat, errors.New("查询统计数据失败")
 	}
 
