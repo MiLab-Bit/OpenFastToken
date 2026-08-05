@@ -386,6 +386,63 @@ func GetEnterpriseStats(enterpriseId int) (map[string]interface{}, error) {
 		Where("enterprise_id = ? AND role = 'admin'", enterpriseId).
 		Count(&adminCount)
 	stats["admin_count"] = adminCount
-	
+
 	return stats, nil
+}
+
+// ============================================================================
+// 企业钱包额度操作方法（Phase 1 双钱包：enterprise_user.quota 语义重定义为成员真实可用余额）
+// ============================================================================
+
+// IncreaseEUQuota 增加成员企业余额（条件更新防负）
+func IncreaseEUQuota(id int, amount int) error {
+	if amount < 0 {
+		return DecreaseEUQuota(id, -amount)
+	}
+	if amount == 0 {
+		return nil
+	}
+	res := DB.Model(&EnterpriseUser{}).Where("id = ? AND quota + ? >= 0", id, amount).
+		Update("quota", gorm.Expr("quota + ?", amount))
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("enterprise user quota update failed")
+	}
+	return nil
+}
+
+// DecreaseEUQuota 扣减成员企业余额（条件更新防负/防超卖）
+func DecreaseEUQuota(id int, amount int) error {
+	if amount <= 0 {
+		return nil
+	}
+	res := DB.Model(&EnterpriseUser{}).Where("id = ? AND quota >= ?", id, amount).
+		Update("quota", gorm.Expr("quota - ?", amount))
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("enterprise user quota insufficient")
+	}
+	return nil
+}
+
+// RecordEUUsedQuota 累加成员已用企业额度
+func RecordEUUsedQuota(id int, amount int) error {
+	if amount <= 0 {
+		return nil
+	}
+	return DB.Model(&EnterpriseUser{}).Where("id = ?", id).
+		Update("used_quota", gorm.Expr("used_quota + ?", amount)).Error
+}
+
+// GetEUQuota 读取成员企业余额
+func GetEUQuota(enterpriseId int, userId int) (int, error) {
+	eu, err := GetEnterpriseUser(enterpriseId, userId)
+	if err != nil {
+		return 0, err
+	}
+	return eu.Quota, nil
 }

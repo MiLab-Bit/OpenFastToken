@@ -41,6 +41,9 @@ type Log struct {
 
 	// Tenant isolation (Phase 1 multi-tenancy)
 	TenantId int `json:"tenant_id" gorm:"default:0;index"`
+
+	// 资金来源：wallet（个人钱包）/ enterprise_wallet（企业钱包）；双钱包分账与退款原路返回用
+	FundingSource string `json:"funding_source" gorm:"type:varchar(20);default:'wallet'"`
 }
 
 // don't use iota, avoid change log type value
@@ -216,6 +219,8 @@ type RecordConsumeLogParams struct {
 	// TenantId 为 Phase 1 多租户透传字段。调用方可显式指定；
 	// 留空（0）时由 RecordConsumeLog / RecordConsumeLogAsync 自行兜底解析。
 	TenantId int `json:"tenant_id"`
+	// FundingSource 资金来源标识：wallet / enterprise_wallet
+	FundingSource string `json:"funding_source"`
 }
 
 func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams) {
@@ -265,6 +270,7 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 		UpstreamRequestId: upstreamRequestId,
 		Other:             otherStr,
 		TenantId:          tenantId,
+		FundingSource:     params.FundingSource,
 	}
 	err := LOG_DB.Create(log).Error
 	if err != nil {
@@ -278,15 +284,16 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 }
 
 type RecordTaskBillingLogParams struct {
-	UserId    int
-	LogType   int
-	Content   string
-	ChannelId int
-	ModelName string
-	Quota     int
-	TokenId   int
-	Group     string
-	Other     map[string]interface{}
+	UserId        int
+	LogType       int
+	Content       string
+	ChannelId     int
+	ModelName     string
+	Quota         int
+	TokenId       int
+	Group         string
+	Other         map[string]interface{}
+	FundingSource string
 }
 
 func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
@@ -314,7 +321,8 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 		Group:     params.Group,
 		Other:     common.MapToJsonStr(params.Other),
 		// Phase 1 多租户：任务计费为低频路径，无 ctx，走单列索引查询
-		TenantId: GetUserEnterpriseId(params.UserId),
+		TenantId:      GetUserEnterpriseId(params.UserId),
+		FundingSource: params.FundingSource,
 	}
 	err := LOG_DB.Create(log).Error
 	if err != nil {
