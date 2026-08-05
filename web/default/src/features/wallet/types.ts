@@ -223,7 +223,46 @@ export interface UserWalletData {
   aff_recharge_total: number
   /** User group */
   group: string
+  /** Enterprise (tenant) id the user belongs to, 0 = personal account */
+  enterprise_id?: number
 }
+
+/**
+ * Enterprise wallet data returned by GET /api/user/tenant/wallet
+ */
+export interface TenantWalletData {
+  /** Whether the current user has joined an enterprise */
+  joined: boolean
+  /** Enterprise (tenant) id, 0 when not joined */
+  enterprise_id: number
+  /** Quota granted to this member by the enterprise (real usable balance) */
+  my_quota: number
+  /** Quota consumed by this member from the enterprise wallet */
+  my_used_quota: number
+  /** Whether the current user is an enterprise admin */
+  is_admin: boolean
+  /** Member status: active | inactive */
+  status?: string
+  /** Admin-only: enterprise main wallet view */
+  wallet?: {
+    /** Enterprise main wallet balance (available for granting) */
+    balance: number
+    /** Cumulative quota granted to members */
+    total_granted: number
+    /** Cumulative quota recycled from members */
+    total_recycled: number
+  }
+}
+
+export type TenantWalletResponse = ApiResponse<TenantWalletData>
+
+export interface EnterpriseTopupResponseData {
+  code_url?: string
+  pay_link?: string
+  trade_no?: string
+}
+
+export type EnterpriseTopupResponse = ApiResponse<EnterpriseTopupResponseData>
 
 /**
  * Topup record status

@@ -198,6 +198,55 @@ export async function getUserBillingHistory(
   return res.data
 }
 
+// ============================================================================
+// Enterprise (Tenant) Wallet API
+//
+// Backend resolves the tenant from the authenticated session — the client
+// never sends an enterprise id. Safe against cross-tenant enumeration.
+// ============================================================================
+
+/**
+ * Fetch the current user's enterprise wallet view (member quota + admin main wallet).
+ */
+export async function getTenantWallet(): Promise<TenantWalletResponse> {
+  const res = await api.get('/api/user/tenant/wallet')
+  return res.data
+}
+
+/**
+ * Enterprise admin grants quota from the main wallet to a member.
+ */
+export async function grantTenantQuota(
+  userId: number,
+  quota: number
+): Promise<ApiResponse> {
+  const res = await api.post('/api/user/tenant/wallet/grant', {
+    user_id: userId,
+    quota,
+  })
+  return res.data
+}
+
+/**
+ * Enterprise admin self-recharges the main wallet (WeChat native / Alipay).
+ */
+export async function requestEnterpriseTopup(
+  amount: number,
+  paymentMethod: 'wechat' | 'alipay'
+): Promise<EnterpriseTopupResponse> {
+  const res = await api.post(
+    '/api/user/tenant/wallet/topup',
+    {
+      amount,
+      payment_method: paymentMethod === 'wechat' ? 'wxpay' : 'alipay',
+    },
+    {
+      skipBusinessError: true,
+    } as Record<string, unknown>
+  )
+  return res.data
+}
+
 /**
  * Get billing history for all users (admin only)
  */
