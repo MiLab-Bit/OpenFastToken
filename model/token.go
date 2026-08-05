@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/MiLab-Bit/OpenFastToken/common"
-	"github.com/MiLab-Bit/OpenFastToken/setting/operation_setting"
 	"github.com/bytedance/gopkg/util/gopool"
 	"gorm.io/gorm"
+	"github.com/MiLab-Bit/OpenFastToken/common"
+	"github.com/MiLab-Bit/OpenFastToken/setting/operation_setting"
 )
 
 type Token struct {
@@ -28,6 +28,7 @@ type Token struct {
 	UsedQuota          int            `json:"used_quota" gorm:"default:0"` // used quota
 	Group              string         `json:"group" gorm:"default:''"`
 	CrossGroupRetry    bool           `json:"cross_group_retry"` // 跨分组重试，仅auto分组有效
+	TenantId           int            `json:"tenant_id" gorm:"default:0;index"`
 	DeletedAt          gorm.DeletedAt `gorm:"index"`
 }
 
@@ -81,7 +82,9 @@ func (token *Token) GetIpLimits() []string {
 func GetAllUserTokens(userId int, startIdx int, num int) ([]*Token, error) {
 	var tokens []*Token
 	var err error
-	err = DB.Where("user_id = ?", userId).Order("id desc").Limit(num).Offset(startIdx).Find(&tokens).Error
+	entId := GetUserEnterpriseId(userId)
+	err = DB.Where("user_id = ? OR (tenant_id = ? AND tenant_id != 0)", userId, entId).
+		Order("id desc").Limit(num).Offset(startIdx).Find(&tokens).Error
 	return tokens, err
 }
 
@@ -149,7 +152,8 @@ func SearchUserTokens(userId int, keyword string, token string, offset int, limi
 		}
 	}
 
-	baseQuery := DB.Model(&Token{}).Where("user_id = ?", userId)
+	entId := GetUserEnterpriseId(userId)
+	baseQuery := DB.Model(&Token{}).Where("user_id = ? OR (tenant_id = ? AND tenant_id != 0)", userId, entId)
 
 	// 非空才加 LIKE 条件，空则跳过（不过滤该字段）
 	if keyword != "" {
@@ -227,9 +231,9 @@ func GetTokenByIds(id int, userId int) (*Token, error) {
 	if id == 0 || userId == 0 {
 		return nil, errors.New("id 或 userId 为空！")
 	}
-	token := Token{Id: id, UserId: userId}
+	token := Token{Id: id}
 	var err error = nil
-	err = DB.First(&token, "id = ? and user_id = ?", id, userId).Error
+	err = DB.First(&token, "id = ? AND user_id = ?", id, userId).Error
 	return &token, err
 }
 
@@ -362,8 +366,8 @@ func DeleteTokenById(id int, userId int) (err error) {
 	if id == 0 || userId == 0 {
 		return errors.New("id 或 userId 为空！")
 	}
-	token := Token{Id: id, UserId: userId}
-	err = DB.Where(token).First(&token).Error
+	token := Token{Id: id}
+	err = DB.Where("user_id = ?", userId).First(&token).Error
 	if err != nil {
 		return err
 	}
@@ -433,7 +437,8 @@ func decreaseTokenQuota(id int, quota int) (err error) {
 // CountUserTokens returns total number of tokens for the given user, used for pagination
 func CountUserTokens(userId int) (int64, error) {
 	var total int64
-	err := DB.Model(&Token{}).Where("user_id = ?", userId).Count(&total).Error
+	entId := GetUserEnterpriseId(userId)
+	err := DB.Model(&Token{}).Where("user_id = ? OR (tenant_id = ? AND tenant_id != 0)", userId, entId).Count(&total).Error
 	return total, err
 }
 
