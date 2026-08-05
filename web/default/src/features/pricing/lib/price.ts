@@ -274,10 +274,10 @@ export interface VideoTierPriceInfo {
  */
 export function getVideoTierPrice(model: PricingModel): VideoTierPriceInfo | null {
   if (!isVideoTieredModel(model)) return null
-  // 视频模型价格固定（720P=0.9元/秒, 1080P=1.6元/秒），不依赖 ratio 表、会员/API 折扣均不生效
+  // 视频模型价格固定（720P=0.99元/秒, 1080P=1.8元/秒），不依赖 ratio 表、会员/API 折扣均不生效
   return {
-    price720p: 0.9,
-    price1080p: 1.6,
+    price720p: 0.99,
+    price1080p: 1.8,
     unit: '元/秒',
   }
 }
