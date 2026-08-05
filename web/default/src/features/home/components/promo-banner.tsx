@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023-2026 OpenFastToken
+Copyright (C) 2023-2026 FastToken
 
 活动宣传横幅组件 - Portfolio风格UI
 支持动态内容配置
@@ -30,7 +30,7 @@ const defaultConfig: PromoConfig = {
   ctaText: '立即充值',
   ctaLink: '/wallet',
   badgeText: '限时活动',
-  partnerText: '电信 × OpenFastToken 联合出品',
+  partnerText: '电信 × FastToken 联合出品',
 }
 
 // Portfolio stone palette colors
