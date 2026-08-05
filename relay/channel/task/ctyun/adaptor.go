@@ -163,7 +163,7 @@ func mapCtyunModel(m string) string {
 // 故最终每秒配额 = 1.0 × 本单价 × QuotaPerUnit，本函数即“每秒单价”本身。
 var ctyunVideoPricePerSecond = map[string]float64{
 	"720P":  0.99,
-	"1080P": 1.79,
+	"1080P": 1.8,
 }
 
 // ctyunResolutionRatio 返回该分辨率下每秒的绝对单价（元），直接作为计费倍率使用。
