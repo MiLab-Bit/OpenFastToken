@@ -351,7 +351,7 @@ var upgrader = websocket.Upgrader{
 			return true
 		}
 		// Allow the production domain and local dev origins.
-		if origin == "https://openfasttoken.example" || origin == "https://openfasttoken.example:443" {
+		if origin == "https://fasttoken.example.com" || origin == "https://fasttoken.example.com:443" {
 			return true
 		}
 		return false
@@ -666,6 +666,7 @@ func RelayTask(c *gin.Context) {
 		task := model.InitTask(result.Platform, relayInfo)
 		task.PrivateData.UpstreamTaskID = result.UpstreamTaskID
 		task.PrivateData.BillingSource = relayInfo.BillingSource
+		task.PrivateData.EnterpriseUserId = relayInfo.EnterpriseUserId
 		task.PrivateData.SubscriptionId = relayInfo.SubscriptionId
 		task.PrivateData.TokenId = relayInfo.TokenId
 		task.PrivateData.BillingContext = &model.TaskBillingContext{
