@@ -73,7 +73,7 @@ func SetWebRouter(router *gin.Engine, assets ThemeAssets) {
 	router.StaticFile("/zhiqihui-logo.jpg", filepath.Join(distDir, "zhiqihui-logo.jpg"))
 
 	// User-facing skill package download. Served at runtime from the repo's
-	// skills-dist/ dir (kept in sync with the official openfasttoken.example distribution),
+	// skills-dist/ dir (kept in sync with the official fasttoken.example.com distribution),
 	// so refreshing the zip never requires a rebuild.
 	router.GET("/skills/fasttoken-skills.zip", func(c *gin.Context) {
 		c.Header("Content-Disposition", "attachment; filename=fasttoken-skills.zip")
