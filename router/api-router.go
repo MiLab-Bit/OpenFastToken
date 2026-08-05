@@ -330,11 +330,14 @@ func SetApiRouter(router *gin.Engine) {
 		{
 			tenantSelfRoute.GET("/info", controller.GetMyTenantInfo)
 			tenantSelfRoute.GET("/members", controller.GetMyTenantMembers)
-			// 企业钱包：余额任何成员可读，派发/回收/流水仅企业管理员
+			// 企业钱包：余额任何成员可读，派发/回收/流水/自助充值仅企业管理员
 			tenantSelfRoute.GET("/wallet", controller.GetMyTenantWallet)
 			tenantSelfRoute.POST("/wallet/grant", controller.GrantTenantWalletQuota)
 			tenantSelfRoute.POST("/wallet/recycle", controller.RecycleTenantWalletQuota)
 			tenantSelfRoute.GET("/wallet/txns", controller.GetTenantWalletTxns)
+			// Q3 企业自助支付充值（微信/支付宝，回调复用个人充值 notify）
+			tenantSelfRoute.POST("/wallet/topup", controller.RequestEnterpriseWalletTopUp)
+			tenantSelfRoute.GET("/wallet/topup/status", controller.GetEnterpriseWalletTopUpStatus)
 		}
 
 		// ==================== Enterprise (admin) ====================

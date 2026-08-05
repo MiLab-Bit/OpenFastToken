@@ -60,32 +60,94 @@ func (w *EnterpriseWallet) Recharge(amount int, operatorId int, tradeNo string) 
 		return errors.New("recharge amount must be positive")
 	}
 	return DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&EnterpriseWallet{}).
-			Where("id = ?", w.Id).
-			Updates(map[string]interface{}{
-				"balance":       gorm.Expr("balance + ?", amount),
-				"total_granted": gorm.Expr("total_granted + ?", amount),
-			}).Error; err != nil {
-			return err
-		}
-		balanceAfter, err := readBalanceInTx(tx, w.Id)
-		if err != nil {
-			return err
-		}
-		return tx.Create(&EnterpriseWalletTxn{
-			EnterpriseId: w.EnterpriseId,
-			Type:         WalletTxnTypeRecharge,
-			Amount:       amount,
-			BalanceAfter: balanceAfter,
-			OperatorId:   operatorId,
-			TradeNo:      tradeNo,
-		}).Error
+		return w.RechargeInTx(tx, amount, operatorId, tradeNo)
 	})
+}
+
+// RechargeInTx 在既有事务内完成企业主钱包充值入账（支付回调使用，避免嵌套事务）。
+// 仅要求 w.EnterpriseId 有效；事务内自动创建钱包行（并发首建冲突时回读）。
+func (w *EnterpriseWallet) RechargeInTx(tx *gorm.DB, amount int, operatorId int, tradeNo string) error {
+	if amount <= 0 {
+		return errors.New("recharge amount must be positive")
+	}
+	if w.EnterpriseId <= 0 {
+		return errors.New("invalid enterprise id")
+	}
+	// 事务内确保钱包行存在
+	var wallet EnterpriseWallet
+	err := tx.Where("enterprise_id = ?", w.EnterpriseId).First(&wallet).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		wallet = EnterpriseWallet{EnterpriseId: w.EnterpriseId}
+		if cErr := tx.Create(&wallet).Error; cErr != nil {
+			// 并发首次创建唯一索引冲突，回读已存在的行
+			if reErr := tx.Where("enterprise_id = ?", w.EnterpriseId).First(&wallet).Error; reErr != nil {
+				return cErr
+			}
+		}
+	} else if err != nil {
+		return err
+	}
+	if err := tx.Model(&EnterpriseWallet{}).
+		Where("id = ?", wallet.Id).
+		Updates(map[string]interface{}{
+			"balance":       gorm.Expr("balance + ?", amount),
+			"total_granted": gorm.Expr("total_granted + ?", amount),
+		}).Error; err != nil {
+		return err
+	}
+	balanceAfter, err := readBalanceInTx(tx, wallet.Id)
+	if err != nil {
+		return err
+	}
+	return tx.Create(&EnterpriseWalletTxn{
+		EnterpriseId: w.EnterpriseId,
+		Type:         WalletTxnTypeRecharge,
+		Amount:       amount,
+		BalanceAfter: balanceAfter,
+		OperatorId:   operatorId,
+		TradeNo:      tradeNo,
+	}).Error
 }
 
 // RechargeByOperator 平台管理员手工授信充值，remark 落到流水的 TradeNo 字段作为备注。
 func (w *EnterpriseWallet) RechargeByOperator(amount int, operatorId int, remark string) error {
 	return w.Recharge(amount, operatorId, remark)
+}
+
+// RefundInTx 在既有事务内冲销企业主钱包余额（管理员退款用），并写流水。
+// 与个人钱包退款口径一致：只做平台内配额冲销，不触碰支付网关的实际退款。
+func (w *EnterpriseWallet) RefundInTx(tx *gorm.DB, amount int, operatorId int, tradeNo string) error {
+	if amount <= 0 {
+		return errors.New("refund amount must be positive")
+	}
+	if w.EnterpriseId <= 0 {
+		return errors.New("invalid enterprise id")
+	}
+	res := tx.Model(&EnterpriseWallet{}).
+		Where("enterprise_id = ?", w.EnterpriseId).
+		Update("balance", gorm.Expr("CASE WHEN balance - ? < 0 THEN 0 ELSE balance - ? END", amount, amount))
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("企业钱包不存在")
+	}
+	var wallet EnterpriseWallet
+	if err := tx.Where("enterprise_id = ?", w.EnterpriseId).First(&wallet).Error; err != nil {
+		return err
+	}
+	balanceAfter, err := readBalanceInTx(tx, wallet.Id)
+	if err != nil {
+		return err
+	}
+	return tx.Create(&EnterpriseWalletTxn{
+		EnterpriseId: w.EnterpriseId,
+		Type:         WalletTxnTypeRefund,
+		Amount:       amount,
+		BalanceAfter: balanceAfter,
+		OperatorId:   operatorId,
+		TradeNo:      tradeNo,
+	}).Error
 }
 
 // GrantToMember 从企业主钱包向成员派发额度：扣主钱包、增成员余额、写流水（单事务）。
