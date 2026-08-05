@@ -80,7 +80,29 @@ func resolveTokenKey(ctx context.Context, tokenId int, taskID string) string {
 }
 
 // taskAdjustFunding 调整任务的资金来源，delta > 0 表示扣费，delta < 0 表示退还。
+// 双钱包：按提交任务时锁定的 BillingSource 原路结算，绝不跨钱包。
 func taskAdjustFunding(task *model.Task, delta int) error {
+	if delta == 0 {
+		return nil
+	}
+	if task.PrivateData.BillingSource == BillingSourceEnterprise {
+		euId := task.PrivateData.EnterpriseUserId
+		if euId > 0 {
+			if delta > 0 {
+				return model.ConsumeEUQuota(euId, delta)
+			}
+			return model.RefundEUQuota(euId, -delta)
+		}
+		// 兜底：企业来源但缺少 euId（旧任务数据），实时反查成员身份
+		if m, err := model.GetActiveEnterpriseMembership(task.UserId); err == nil && m != nil {
+			if delta > 0 {
+				return model.ConsumeEUQuota(m.EnterpriseUserId, delta)
+			}
+			return model.RefundEUQuota(m.EnterpriseUserId, -delta)
+		}
+		common.SysLog(fmt.Sprintf("task %s billed from enterprise but membership unresolved (user=%d, delta=%d), falling back to personal wallet",
+			task.TaskID, task.UserId, delta))
+	}
 	if delta > 0 {
 		return model.DecreaseUserQuota(task.UserId, delta, false)
 	}
