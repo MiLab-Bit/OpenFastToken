@@ -203,6 +203,8 @@ func authHelper(c *gin.Context, minRole int) {
 				"threshold":       common.QuotaRemindThreshold,
 			})
 		}
+		// Phase 1 多租户：注入企业 ID 供下游 DAO/handler 做租户隔离
+		c.Set("enterprise_id", model.GetUserEnterpriseId(userId))
 	}
 
 	c.Next()
@@ -321,6 +323,9 @@ func TokenAuthReadOnly() func(c *gin.Context) {
 		}
 
 		c.Set("id", token.UserId)
+		// Phase 1 多租户：relay 只读路径不走 authHelper，直接复用 token.TenantId，
+		// 保证下游写日志时能拿到 enterprise_id，且零额外 DB 查询。
+		c.Set("enterprise_id", token.TenantId)
 		c.Set("token_id", token.Id)
 		c.Set("token_key", token.Key)
 		c.Next()
@@ -499,6 +504,9 @@ func SetupContextForToken(c *gin.Context, token *model.Token, parts ...string) e
 		return fmt.Errorf("token is nil")
 	}
 	c.Set("id", token.UserId)
+	// Phase 1 多租户：relay 路径不走 authHelper，直接复用 token.TenantId，
+	// 保证下游写日志时能拿到 enterprise_id，且零额外 DB 查询（热路径无损）。
+	c.Set("enterprise_id", token.TenantId)
 	c.Set("token_id", token.Id)
 	c.Set("token_key", token.Key)
 	c.Set("token_name", token.Name)
