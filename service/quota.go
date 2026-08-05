@@ -408,15 +408,63 @@ func PreConsumeTokenQuota(relayInfo *relaycommon.RelayInfo, quota int) error {
 	return nil
 }
 
+// ResolveFundingForLegacyPath 为不经过 BillingSession 的路径（Midjourney 等）锁定资金来源。
+// 选路规则与 CompositeFunding 一致：企业余额足够本次消费则走企业钱包，否则走个人钱包。
+// 结果写回 relayInfo.BillingSource / EnterpriseUserId，返回选中来源的可用余额。
+func ResolveFundingForLegacyPath(relayInfo *relaycommon.RelayInfo, needQuota int) (int, error) {
+	userQuota, err := model.GetUserQuota(relayInfo.UserId, false)
+	if err != nil {
+		return 0, err
+	}
+	relayInfo.BillingSource = BillingSourceWallet
+	relayInfo.EnterpriseUserId = 0
+
+	m, mErr := model.GetActiveEnterpriseMembership(relayInfo.UserId)
+	if mErr != nil {
+		common.SysLog(fmt.Sprintf("error querying enterprise membership for user %d, fallback to personal wallet: %s",
+			relayInfo.UserId, mErr.Error()))
+		return userQuota, nil
+	}
+	if m != nil && m.Quota > 0 && m.Quota >= needQuota {
+		relayInfo.BillingSource = BillingSourceEnterprise
+		relayInfo.EnterpriseUserId = m.EnterpriseUserId
+		return m.Quota, nil
+	}
+	return userQuota, nil
+}
+
+// adjustUserFunding 按 relayInfo 上锁定的资金来源调整额度，quota > 0 扣费，quota < 0 退还。
+// BillingSource 为空时（未经 BillingSession 的路径）默认走个人钱包，与改造前行为一致。
+func adjustUserFunding(relayInfo *relaycommon.RelayInfo, quota int) error {
+	if quota == 0 {
+		return nil
+	}
+	if relayInfo.BillingSource == BillingSourceEnterprise {
+		euId := relayInfo.EnterpriseUserId
+		if euId <= 0 {
+			if m, mErr := model.GetActiveEnterpriseMembership(relayInfo.UserId); mErr == nil && m != nil {
+				euId = m.EnterpriseUserId
+			}
+		}
+		if euId > 0 {
+			if quota > 0 {
+				return model.ConsumeEUQuota(euId, quota)
+			}
+			return model.RefundEUQuota(euId, -quota)
+		}
+		common.SysLog(fmt.Sprintf("billing source is enterprise but membership unresolved (user=%d, quota=%d), falling back to personal wallet",
+			relayInfo.UserId, quota))
+	}
+	if quota > 0 {
+		return model.DecreaseUserQuota(relayInfo.UserId, quota, false)
+	}
+	return model.IncreaseUserQuota(relayInfo.UserId, -quota, false)
+}
+
 func PostConsumeQuota(relayInfo *relaycommon.RelayInfo, quota int, preConsumedQuota int, sendEmail bool) (err error) {
 
-	// Consume from wallet quota
-	if quota > 0 {
-		err = model.DecreaseUserQuota(relayInfo.UserId, quota, false)
-	} else {
-		err = model.IncreaseUserQuota(relayInfo.UserId, -quota, false)
-	}
-	if err != nil {
+	// 双钱包：按本次请求锁定的资金来源原路结算（无 BillingSession 的遗留回退路径）
+	if err = adjustUserFunding(relayInfo, quota); err != nil {
 		return err
 	}
 
