@@ -23,7 +23,7 @@ var (
 
 func printHelp() {
 	fmt.Println("FastToken " + Version + " - AI API distribution platform")
-	fmt.Println("Homepage: https://openfasttoken.example")
+	fmt.Println("Homepage: https://fasttoken.example.com")
 	fmt.Println("Usage: FastToken [--port <port>] [--log-dir <log directory>] [--version] [--help]")
 }
 
