@@ -12,14 +12,14 @@ License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-For commercial licensing, please contact support@example.com
+For commercial licensing, please contact hello@fasttoken.example.com
 */
 import { useNavigate, useRouter } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
-const FEEDBACK_URL = 'https://openfasttoken.example/docs/faq'
+const FEEDBACK_URL = 'https://fasttoken.example.com/docs/faq'
 
 type GeneralErrorProps = React.HTMLAttributes<HTMLDivElement> & {
   minimal?: boolean
