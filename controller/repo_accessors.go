@@ -10,3 +10,4 @@ import (
 func userRepo() repository.UserRepository         { return di.Default().User }
 func tokenRepo() repository.TokenRepository       { return di.Default().Token }
 func channelRepo() repository.ChannelRepository   { return di.Default().Channel }
+func skillRepo() repository.SkillRepository       { return di.Default().Skill }
