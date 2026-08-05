@@ -330,6 +330,11 @@ func SetApiRouter(router *gin.Engine) {
 		{
 			tenantSelfRoute.GET("/info", controller.GetMyTenantInfo)
 			tenantSelfRoute.GET("/members", controller.GetMyTenantMembers)
+			// 企业钱包：余额任何成员可读，派发/回收/流水仅企业管理员
+			tenantSelfRoute.GET("/wallet", controller.GetMyTenantWallet)
+			tenantSelfRoute.POST("/wallet/grant", controller.GrantTenantWalletQuota)
+			tenantSelfRoute.POST("/wallet/recycle", controller.RecycleTenantWalletQuota)
+			tenantSelfRoute.GET("/wallet/txns", controller.GetTenantWalletTxns)
 		}
 
 		// ==================== Enterprise (admin) ====================
@@ -340,6 +345,9 @@ func SetApiRouter(router *gin.Engine) {
 			enterpriseRoute.POST("/", controller.AdminCreateEnterprise)
 			enterpriseRoute.POST("/:id/approve", controller.AdminApproveEnterprise)
 			enterpriseRoute.POST("/:id/reject", controller.AdminRejectEnterprise)
+			// 平台侧企业钱包授信
+			enterpriseRoute.GET("/:id/wallet", controller.AdminGetEnterpriseWallet)
+			enterpriseRoute.POST("/:id/wallet/recharge", controller.AdminRechargeEnterpriseWallet)
 		}
 
 		// ==================== Custom OAuth Providers (admin) ====================
