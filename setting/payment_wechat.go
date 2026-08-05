@@ -13,7 +13,7 @@ var (
 	WechatPublicKeyPath   string  = getEnvOrDefault("WECHAT_PUBLIC_KEY_PATH", "cert/wechat/pub_key.pem")
 	WechatAppId           string  = getEnvOrDefault("WECHAT_APP_ID", "")
 	WechatMchId           string  = getEnvOrDefault("WECHAT_MCH_ID", "")
-	WechatMchName         string  = getEnvOrDefault("WECHAT_MCH_NAME", "OpenFastToken")
+	WechatMchName         string  = getEnvOrDefault("WECHAT_MCH_NAME", "FastToken")
 	WechatApiV3Key        string  = getEnvOrDefault("WECHAT_API_V3_KEY", "")
 	WechatPrivateKey      string  = "" // 优先使用文件路径
 	WechatPrivateKeyPath  string  = getEnvOrDefault("WECHAT_PRIVATE_KEY_PATH", "cert/wechat/apiclient_key.pem")
