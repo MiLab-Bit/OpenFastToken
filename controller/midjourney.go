@@ -179,9 +179,17 @@ func UpdateMidjourneyTaskBulk() {
 				if err != nil {
 					logger.LogError(ctx, "UpdateMidjourneyTask task error: "+err.Error())
 				} else if won && shouldReturnQuota {
-					err = userRepo().IncreaseQuota(task.UserId, task.Quota, true)
-					if err != nil {
-						logger.LogError(ctx, "fail to increase user quota: "+err.Error())
+					// 双钱包：退款必须原路返回，企业扣的退企业，个人扣的退个人
+					fundingSource := task.BillingSource
+					if fundingSource == service.BillingSourceEnterprise && task.EnterpriseUserId > 0 {
+						if err = model.RefundEUQuota(task.EnterpriseUserId, task.Quota); err != nil {
+							logger.LogError(ctx, "fail to refund enterprise quota: "+err.Error())
+						}
+					} else {
+						fundingSource = service.BillingSourceWallet
+						if err = userRepo().IncreaseQuota(task.UserId, task.Quota, true); err != nil {
+							logger.LogError(ctx, "fail to increase user quota: "+err.Error())
+						}
 					}
 					model.RecordTaskBillingLog(model.RecordTaskBillingLogParams{
 						UserId:    task.UserId,
@@ -190,6 +198,7 @@ func UpdateMidjourneyTaskBulk() {
 						ChannelId: task.ChannelId,
 						ModelName: service.CovertMjpActionToModelName(task.Action),
 						Quota:     task.Quota,
+						FundingSource: fundingSource,
 						Other: map[string]interface{}{
 							"task_id": task.MjId,
 							"reason":  "构图失败",
