@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 /*
-Copyright (C) 2023-2026 OpenFastToken
+Copyright (C) 2023-2026 FastToken
 
 广场初始引导页 — 提示用户创建API令牌、保持余额
 */
