@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2023-2026 OpenFastToken
+Copyright (C) 2023-2026 FastToken
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -14,7 +14,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-For commercial licensing, please contact support@example.com
+For commercial licensing, please contact hello@fasttoken.example.com
 */
 import { useState } from 'react'
 import { ExternalLinkIcon, RefreshCcwIcon } from 'lucide-react'
@@ -62,7 +62,7 @@ export function UpdateCheckerSection({
     setChecking(true)
     try {
       const response = await fetch(
-        'https://api.github.com/repos/openfasttoken.example/FastToken/releases/latest',
+        'https://api.github.com/repos/fasttoken.example.com/FastToken/releases/latest',
         {
           headers: {
             Accept: 'application/vnd.github+json',
