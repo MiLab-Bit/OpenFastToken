@@ -202,7 +202,8 @@ func RelaySwapFace(c *gin.Context, info *relaycommon.RelayInfo) *dto.MidjourneyR
 		}
 	}
 
-	userQuota, err := model.GetUserQuota(info.UserId, false)
+	// 双钱包：锁定本次消费的资金来源（企业优先，个人兜底），余额按选中来源计算
+	userQuota, err := service.ResolveFundingForLegacyPath(info, priceData.Quota)
 	if err != nil {
 		return &dto.MidjourneyResponse{
 			Code:        4,
@@ -266,6 +267,9 @@ func RelaySwapFace(c *gin.Context, info *relaycommon.RelayInfo) *dto.MidjourneyR
 		FailReason:  "",
 		ChannelId:   c.GetInt("channel_id"),
 		Quota:       priceData.Quota,
+
+		BillingSource:    info.BillingSource,
+		EnterpriseUserId: info.EnterpriseUserId,
 	}
 	err = midjourneyTask.Insert()
 	if err != nil {
@@ -509,7 +513,8 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 		}
 	}
 
-	userQuota, err := model.GetUserQuota(relayInfo.UserId, false)
+	// 双钱包：锁定本次消费的资金来源（企业优先，个人兜底），余额按选中来源计算
+	userQuota, err := service.ResolveFundingForLegacyPath(relayInfo, priceData.Quota)
 	if err != nil {
 		return &dto.MidjourneyResponse{
 			Code:        4,
@@ -579,6 +584,9 @@ func RelayMidjourneySubmit(c *gin.Context, relayInfo *relaycommon.RelayInfo) *dt
 		FailReason:  "",
 		ChannelId:   c.GetInt("channel_id"),
 		Quota:       priceData.Quota,
+
+		BillingSource:    relayInfo.BillingSource,
+		EnterpriseUserId: relayInfo.EnterpriseUserId,
 	}
 	if midjResponse.Code == 3 {
 		//无实例账号自动禁用渠道（No available account instance）
