@@ -265,6 +265,47 @@ export interface EnterpriseTopupResponseData {
 export type EnterpriseTopupResponse = ApiResponse<EnterpriseTopupResponseData>
 
 /**
+ * Enterprise wallet transaction (fund flow) record returned by
+ * GET /api/user/tenant/wallet/txns.
+ */
+export interface EnterpriseWalletTxn {
+  /** Record ID */
+  id: number
+  /** Enterprise (tenant) id */
+  enterprise_id: number
+  /** User ID affected by / related to this transaction */
+  user_id: number
+  /** Transaction type */
+  type: EnterpriseWalletTxnType
+  /** Amount in quota units (same unit as the wallet balance) */
+  amount: number
+  /** Wallet balance immediately after this transaction (quota units) */
+  balance_after: number
+  /** Operator user ID (0 = system) */
+  operator_id: number
+  /** Trade / order number */
+  trade_no: string
+  /** Creation timestamp (Unix seconds) */
+  created_at: number
+}
+
+export type EnterpriseWalletTxnType =
+  | 'recharge'
+  | 'grant'
+  | 'recycle'
+  | 'consume'
+  | 'refund'
+
+export interface EnterpriseWalletTxnsResponseData {
+  items: EnterpriseWalletTxn[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export type EnterpriseWalletTxnsResponse = ApiResponse<EnterpriseWalletTxnsResponseData>
+
+/**
  * Topup record status
  */
 export type TopupStatus = 'success' | 'pending' | 'expired'

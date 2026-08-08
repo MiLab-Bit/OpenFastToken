@@ -18,7 +18,7 @@ For commercial licensing, please contact abovetigers@qq.com
 */
 import { formatTimestampToDate } from '@/lib/format'
 import type { StatusBadgeProps } from '@/components/status-badge'
-import type { TopupStatus } from '../types'
+import type { TopupStatus, EnterpriseWalletTxnType } from '../types'
 
 // ============================================================================
 // Billing Utility Functions
@@ -52,6 +52,27 @@ export const STATUS_CONFIG: Record<TopupStatus, StatusConfig> = {
  */
 export function getStatusConfig(status: TopupStatus): StatusConfig {
   return STATUS_CONFIG[status] || STATUS_CONFIG.pending
+}
+
+/**
+ * Enterprise wallet transaction type badge configuration.
+ * Variant mapping follows the project's semantic token set (no `secondary`
+ * variant exists — `grant` uses `neutral`). Income types (recharge / refund /
+ * recycle) read as gains, expense types (grant / consume) as deductions.
+ */
+export const TXN_TYPE_CONFIG: Record<EnterpriseWalletTxnType, StatusConfig> = {
+  recharge: { variant: 'success', label: 'Enterprise Recharge' },
+  refund: { variant: 'success', label: 'Refund' },
+  recycle: { variant: 'info', label: 'Recycle from Member' },
+  grant: { variant: 'neutral', label: 'Grant to Member' },
+  consume: { variant: 'warning', label: 'Member Consume' },
+}
+
+/**
+ * Get the badge variant + i18n label key for an enterprise wallet txn type.
+ */
+export function getTxnTypeConfig(type: EnterpriseWalletTxnType): StatusConfig {
+  return TXN_TYPE_CONFIG[type] || TXN_TYPE_CONFIG.recharge
 }
 
 /**

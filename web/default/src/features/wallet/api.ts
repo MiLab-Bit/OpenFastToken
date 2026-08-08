@@ -33,6 +33,9 @@ import type {
   WechatPaymentRequest,
   WechatPaymentResponse,
   AlipayPaymentRequest,
+  EnterpriseWalletTxnsResponse,
+  TenantWalletResponse,
+  EnterpriseTopupResponse,
 } from './types'
 
 // ============================================================================
@@ -244,6 +247,24 @@ export async function requestEnterpriseTopup(
       skipBusinessError: true,
     } as Record<string, unknown>
   )
+  return res.data
+}
+
+/**
+ * Enterprise admin fetches the main-wallet fund flow records.
+ * GET /api/user/tenant/wallet/txns?p=1&page_size=20
+ * The backend resolves the tenant from the session, so the client never
+ * sends an enterprise id (safe against cross-tenant enumeration).
+ */
+export async function getTenantWalletTxns(
+  page: number,
+  pageSize: number
+): Promise<EnterpriseWalletTxnsResponse> {
+  const params = new URLSearchParams({
+    p: page.toString(),
+    page_size: pageSize.toString(),
+  })
+  const res = await api.get(`/api/user/tenant/wallet/txns?${params.toString()}`)
   return res.data
 }
 

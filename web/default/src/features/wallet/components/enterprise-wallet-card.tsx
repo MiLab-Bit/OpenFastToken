@@ -19,7 +19,7 @@ For commercial licensing, please contact abovetigers@qq.com
 import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Building2, Loader2, Send, WalletCards } from 'lucide-react'
+import { Building2, Loader2, ReceiptText, Send, WalletCards } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { formatQuota } from '@/lib/format'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -40,6 +40,7 @@ import {
   requestEnterpriseTopup,
 } from '../api'
 import type { TenantWalletData } from '../types'
+import { EnterpriseWalletTxnsDialog } from './enterprise-wallet-txns-dialog'
 
 // ============================================================================
 // Enterprise Wallet Card
@@ -61,6 +62,7 @@ export function EnterpriseWalletCard(props: EnterpriseWalletCardProps) {
   const { t } = useTranslation()
   const [grantOpen, setGrantOpen] = useState(false)
   const [topupOpen, setTopupOpen] = useState(false)
+  const [txnsOpen, setTxnsOpen] = useState(false)
   const [grantUserId, setGrantUserId] = useState('')
   const [grantQuota, setGrantQuota] = useState('')
   const [granting, setGranting] = useState(false)
@@ -212,6 +214,10 @@ export function EnterpriseWalletCard(props: EnterpriseWalletCardProps) {
                   <WalletCards className='size-3.5' />
                   {t('Recharge')}
                 </Button>
+                <Button size='sm' variant='outline' onClick={() => setTxnsOpen(true)}>
+                  <ReceiptText className='size-3.5' />
+                  {t('Fund Flow')}
+                </Button>
               </div>
             </>
           ) : (
@@ -314,6 +320,9 @@ export function EnterpriseWalletCard(props: EnterpriseWalletCardProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Fund flow dialog (admin only) */}
+      <EnterpriseWalletTxnsDialog open={txnsOpen} onOpenChange={setTxnsOpen} />
     </div>
   )
 }
