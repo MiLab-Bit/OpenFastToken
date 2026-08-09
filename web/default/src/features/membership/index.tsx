@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Building2, ArrowRight } from 'lucide-react'
 import { MembershipInfoCard } from './components/membership-info-card'
-import { InvitationCodeInputCard } from './components/invitation-code-input-card'
 import { MembershipUpgradeCard } from './components/membership-upgrade-card'
 import { useMembership } from './hooks'
 
@@ -29,10 +28,6 @@ export function Membership() {
           <MembershipUpgradeCard
             membershipInfo={membershipInfo}
             loading={loading}
-          />
-          <InvitationCodeInputCard
-            onCodeUsed={refresh}
-            disabled={loading}
           />
           <Card>
             <CardHeader>

@@ -3,8 +3,8 @@ package model
 import (
 	"errors"
 
-	"www.abc-ai.cn/FastToken/common"
 	"gorm.io/gorm"
+	"www.abc-ai.cn/FastToken/common"
 )
 
 // ============================================================================
@@ -20,11 +20,10 @@ type Enterprise struct {
 	ContactEmail    string `json:"contact_email" gorm:"type:varchar(100)" validate:"max=100,email"`
 	UserId          int    `json:"user_id" gorm:"default:0;index"`                       // 提交认证的用户ID
 	BusinessLicense string `json:"business_license" gorm:"type:varchar(512);default:''"` // 营业执照文件 URL（上传后返回）
-	InvitationCode  string `json:"invitation_code" gorm:"type:varchar(64);default:''"`   // 企业认证邀请码
 	Status          string `json:"status" gorm:"type:varchar(20);default:'pending';index" validate:"oneof=pending approved rejected"`
 	MembershipLevel string `json:"membership_level" gorm:"type:varchar(20);default:'gold'" validate:"oneof=silver gold platinum"`
-	ApprovedAt     int64  `json:"approved_at" gorm:"default:0"`
-	ApprovedBy     int    `json:"approved_by" gorm:"default:0"`
+	ApprovedAt      int64  `json:"approved_at" gorm:"default:0"`
+	ApprovedBy      int    `json:"approved_by" gorm:"default:0"`
 	RejectReason    string `json:"reject_reason" gorm:"type:varchar(500);default:''"`
 	CreatedAt       int64  `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt       int64  `json:"updated_at" gorm:"autoUpdateTime"`
@@ -185,18 +184,6 @@ func ApproveEnterprise(id int, approvedBy int) error {
 		return err
 	}
 
-	// 2. 企业认证邀请码：审批时核销（绑定企业、标记已用）
-	// 注意：用户会员等级不由邀请码决定（Q2 决策：认证通过即最高等级 platinum）
-	if enterprise.InvitationCode != "" {
-		if code, cerr := GetInvitationCodeByCode(enterprise.InvitationCode); cerr == nil {
-			code.EnterpriseId = enterprise.Id
-			code.UsedBy = enterprise.UserId
-			code.UsedAt = now
-			code.Status = "used"
-			_ = UpdateInvitationCode(code)
-		}
-	}
-
 	// 3. 回写用户：关联企业 + 会员等级（企业认证通过自动升级为最高等级 platinum，永久有效）
 	// Q2 决策：企业认证通过即最高等级，不依赖邀请码等级，也不单独写升级逻辑
 	if enterprise.UserId > 0 {
@@ -226,6 +213,10 @@ func ApproveEnterprise(id int, approvedBy int) error {
 		}
 	}
 
+	// 审批通过即为企业建立主钱包，保证每家企业都有独立资金主体（修复 RC-A：不再只有超管企业有钱包）
+	if _, wErr := GetOrCreateEnterpriseWallet(enterprise.Id); wErr != nil {
+		return wErr
+	}
 	// 4. 更新企业审核状态（认证通过即企业实体也升至最高等级 platinum）
 	return DB.Model(&Enterprise{}).
 		Where("id = ?", id).
@@ -247,9 +238,9 @@ func RejectEnterprise(id int, reason string) error {
 	return DB.Model(&Enterprise{}).
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"status":         "rejected",
+			"status":        "rejected",
 			"reject_reason": reason,
-			"updated_at":     now,
+			"updated_at":    now,
 		}).Error
 }
 
@@ -272,6 +263,6 @@ func UpdateEnterpriseMembership(id int, level string) error {
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
 			"membership_level": level,
-			"updated_at":        now,
+			"updated_at":       now,
 		}).Error
 }

@@ -31,7 +31,6 @@ import { WechatQrDialog } from './components/dialogs/wechat-qr-dialog'
 import { RechargeFormCard } from './components/recharge-form-card'
 import { SubscriptionPlansCard } from './components/subscription-plans-card'
 import { WalletStatsCard } from './components/wallet-stats-card'
-import { EnterpriseWalletCard } from './components/enterprise-wallet-card'
 import { UsageStatsCard } from './components/usage-stats-card'
 import { RecentRequestsCard } from './components/recent-requests-card'
 import { MyGiftsCard } from './components/my-gifts-card'
@@ -273,9 +272,6 @@ export function Wallet(props: WalletProps) {
         <SectionPageLayout.Content>
           <div className='mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-5'>
             <WalletStatsCard user={user} loading={userLoading} />
-
-            {/* Enterprise wallet card — shown for enterprise members */}
-            <EnterpriseWalletCard enterpriseId={user?.enterprise_id} />
 
             {/* Low balance warning banner */}
             {user && user.quota > 0 && user.quota < 100000 && (

@@ -28,7 +28,6 @@ export const ENTERPRISE_REGISTER_FORM_DEFAULTS = {
   contact_phone: '',
   contact_email: '',
   business_license: '',
-  invitation_code: '',
 }
 
 // ============================================================================

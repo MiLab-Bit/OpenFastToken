@@ -36,46 +36,6 @@ export interface MembershipLevelConfig {
   description: string
 }
 
-/** Invitation code record */
-export interface InvitationCode {
-  id: number
-  code: string
-  type: MembershipLevel
-  used_by: number
-  enterprise_id: number
-  expires_at: number
-  remark: string
-  created_by: number
-  created_at: number
-}
-
-/** Invitation code create request */
-export interface InvitationCodeCreateRequest {
-  type: MembershipLevel
-  count: number
-  expires_in?: number
-  remark?: string
-}
-
-/** Invitation code list response */
-export interface InvitationCodeListResponse {
-  codes: InvitationCode[]
-  total: number
-  page: number
-}
-
-/** Invitation code stats */
-export interface InvitationCodeStats {
-  total: number
-  used: number
-  unused: number
-  expired: number
-}
-
-/** Use invitation code request */
-export interface UseInvitationCodeRequest {
-  code: string
-}
 
 /** Enterprise record */
 export interface Enterprise {

@@ -59,7 +59,6 @@ export function EnterpriseRegisterForm() {
       contact_phone: '',
       contact_email: '',
       business_license: '',
-      invitation_code: '',
     },
   })
 
@@ -113,7 +112,6 @@ export function EnterpriseRegisterForm() {
         ...(data.contact_phone ? { contact_phone: data.contact_phone } : {}),
         ...(data.contact_email ? { contact_email: data.contact_email } : {}),
         ...(licenseUrl ? { business_license: licenseUrl } : {}),
-        ...(data.invitation_code ? { invitation_code: data.invitation_code } : {}),
       }
 
       const result = await registerEnterprise(payload)
@@ -316,27 +314,7 @@ export function EnterpriseRegisterForm() {
           )}
         />
 
-        {/* 企业认证邀请码（必填） */}
-        <FormField
-          control={form.control}
-          name='invitation_code'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('企业认证邀请码')}<span className='text-destructive'> *</span>
-              </FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder={t('请输入企业认证邀请码')}
-                  disabled={isSubmitting}
-                />
-              </FormControl>
-              <FormDescription>{t('输入企业认证邀请码，升级为黄金或铂金会员，享受更低折扣')}</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
+        
         <Button type='submit' disabled={isSubmitting} className='w-full'>
           {isSubmitting ? t('提交中...') : t('提交注册')}
         </Button>

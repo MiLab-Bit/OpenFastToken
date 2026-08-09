@@ -4,10 +4,10 @@ import (
 	"os"
 	"testing"
 
-	"www.abc-ai.cn/FastToken/common"
-	"www.abc-ai.cn/FastToken/model"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
+	"www.abc-ai.cn/FastToken/common"
+	"www.abc-ai.cn/FastToken/model"
 )
 
 // TestMain bootstraps a SQLite test database for the middleware package.
@@ -56,7 +56,6 @@ func TestMain(m *testing.M) {
 		&model.UserOAuthBinding{},
 		&model.PerfMetric{},
 		&model.SMSVerificationCode{},
-		&model.InvitationCode{},
 		&model.Enterprise{},
 		&model.EnterpriseUser{},
 		&model.GroupRatio{},

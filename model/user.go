@@ -24,40 +24,39 @@ func NormalizeEmail(email string) string {
 // User if you add sensitive fields, don't forget to clean them in setupLogin function.
 // Otherwise, the sensitive information will be saved on local storage in plain text!
 type User struct {
-	Id                int             `json:"id"`
-	Username          string          `json:"username" gorm:"unique;index" validate:"max=50"`
-	Password          string          `json:"password" gorm:"not null;" validate:"min=8,max=50"`
-	OriginalPassword  string          `json:"original_password" gorm:"-:all"` // this field is only for Password change verification, don't save it to database!
-	DisplayName       string          `json:"display_name" gorm:"index" validate:"max=20"`
-	Role              int             `json:"role" gorm:"type:int;default:1"`   // admin, common
-	Status            int             `json:"status" gorm:"type:int;default:1"` // enabled, disabled
-	Email             string          `json:"email" gorm:"index" validate:"max=50"`
-	WeChatId          string          `json:"wechat_id" gorm:"column:wechat_id;index"`
-	Phone             string          `json:"phone" gorm:"column:phone;index;default:''" validate:"omitempty,len=11"`
-	VerificationCode  string          `json:"verification_code" gorm:"-:all"`                         // this field is only for Email verification, don't save it to database!
-	AccessToken       *string         `json:"-" gorm:"type:char(32);column:access_token;uniqueIndex"` // this token is for system management
-	Quota             int             `json:"quota" gorm:"type:int;default:0"`
-	UsedQuota         int             `json:"used_quota" gorm:"type:int;default:0;column:used_quota"` // used quota
-	RequestCount      int             `json:"request_count" gorm:"type:int;default:0;"`               // request number
-	Group             string          `json:"group" gorm:"type:varchar(64);default:'default'"`
-	AffCode           string          `json:"aff_code" gorm:"type:varchar(32);column:aff_code;uniqueIndex"`
-	AffCount          int             `json:"aff_count" gorm:"type:int;default:0;column:aff_count"`
-	AffQuota          int             `json:"aff_quota" gorm:"type:int;default:0;column:aff_quota"`           // affiliate remaining quota
-	AffHistoryQuota   int             `json:"aff_history_quota" gorm:"type:int;default:0;column:aff_history"` // affiliate history quota
-	InviterId         int             `json:"inviter_id" gorm:"type:int;column:inviter_id;index"`
-	AffRechargeTotal  int             `json:"aff_recharge_total" gorm:"type:int;default:0;column:aff_recharge_total"` // 累计被推荐人实付总额（元）
-	DeletedAt         gorm.DeletedAt  `gorm:"index"`
-	Setting           string          `json:"setting" gorm:"type:text;column:setting"`
-	Remark            string          `json:"remark,omitempty" gorm:"type:varchar(255)" validate:"max=255"`
+	Id               int            `json:"id"`
+	Username         string         `json:"username" gorm:"unique;index" validate:"max=50"`
+	Password         string         `json:"password" gorm:"not null;" validate:"min=8,max=50"`
+	OriginalPassword string         `json:"original_password" gorm:"-:all"` // this field is only for Password change verification, don't save it to database!
+	DisplayName      string         `json:"display_name" gorm:"index" validate:"max=20"`
+	Role             int            `json:"role" gorm:"type:int;default:1"`   // admin, common
+	Status           int            `json:"status" gorm:"type:int;default:1"` // enabled, disabled
+	Email            string         `json:"email" gorm:"index" validate:"max=50"`
+	WeChatId         string         `json:"wechat_id" gorm:"column:wechat_id;index"`
+	Phone            string         `json:"phone" gorm:"column:phone;index;default:''" validate:"omitempty,len=11"`
+	VerificationCode string         `json:"verification_code" gorm:"-:all"`                         // this field is only for Email verification, don't save it to database!
+	AccessToken      *string        `json:"-" gorm:"type:char(32);column:access_token;uniqueIndex"` // this token is for system management
+	Quota            int            `json:"quota" gorm:"type:int;default:0"`
+	UsedQuota        int            `json:"used_quota" gorm:"type:int;default:0;column:used_quota"` // used quota
+	RequestCount     int            `json:"request_count" gorm:"type:int;default:0;"`               // request number
+	Group            string         `json:"group" gorm:"type:varchar(64);default:'default'"`
+	AffCode          string         `json:"aff_code" gorm:"type:varchar(32);column:aff_code;uniqueIndex"`
+	AffCount         int            `json:"aff_count" gorm:"type:int;default:0;column:aff_count"`
+	AffQuota         int            `json:"aff_quota" gorm:"type:int;default:0;column:aff_quota"`           // affiliate remaining quota
+	AffHistoryQuota  int            `json:"aff_history_quota" gorm:"type:int;default:0;column:aff_history"` // affiliate history quota
+	InviterId        int            `json:"inviter_id" gorm:"type:int;column:inviter_id;index"`
+	AffRechargeTotal int            `json:"aff_recharge_total" gorm:"type:int;default:0;column:aff_recharge_total"` // 累计被推荐人实付总额（元）
+	DeletedAt        gorm.DeletedAt `gorm:"index"`
+	Setting          string         `json:"setting" gorm:"type:text;column:setting"`
+	Remark           string         `json:"remark,omitempty" gorm:"type:varchar(255)" validate:"max=255"`
 	// Membership related fields
-	MembershipLevel   string          `json:"membership_level" gorm:"type:varchar(20);default:'silver';index"` // silver/gold/platinum
-	MembershipExpire  int64           `json:"membership_expire" gorm:"default:0"` // membership expiration time (Unix timestamp, 0=never expire)
-	InvitationCode    string          `json:"invitation_code" gorm:"type:varchar(32);default:''"` // invitation code used
-	EnterpriseId      int             `json:"enterprise_id" gorm:"default:0;index"` // associated enterprise ID
-	RegisterIp        string          `json:"register_ip" gorm:"type:varchar(45);default:"`
-	UID               string          `json:"uid" gorm:"type:varchar(32);uniqueIndex;default:''"` // public unique identifier
-	CreatedAt         int64           `json:"created_at" gorm:"autoCreateTime;column:created_at"`
-	LastLoginAt       int64           `json:"last_login_at" gorm:"default:0;column:last_login_at"`
+	MembershipLevel  string `json:"membership_level" gorm:"type:varchar(20);default:'silver';index"` // silver/gold/platinum
+	MembershipExpire int64  `json:"membership_expire" gorm:"default:0"`                              // membership expiration time (Unix timestamp, 0=never expire)
+	EnterpriseId     int    `json:"enterprise_id" gorm:"default:0;index"`                            // associated enterprise ID
+	RegisterIp       string `json:"register_ip" gorm:"type:varchar(45);default:"`
+	UID              string `json:"uid" gorm:"type:varchar(32);uniqueIndex;default:''"` // public unique identifier
+	CreatedAt        int64  `json:"created_at" gorm:"autoCreateTime;column:created_at"`
+	LastLoginAt      int64  `json:"last_login_at" gorm:"default:0;column:last_login_at"`
 }
 
 // BeforeCreate GORM hook: automatically generate unique aff_code and hash password before creating user
@@ -68,7 +67,7 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	if u.UID == "" {
 		u.UID = "FT" + common.GetRandomString(14)
 	}
-	
+
 	// Generate unique aff_code (if empty)
 	// Same DB-level uniqueness guarantee applies.
 	if u.AffCode == "" {
@@ -93,13 +92,13 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 // ToBaseUser converts User to UserBase for cache
 func (user *User) ToBaseUser() *UserBase {
 	cache := &UserBase{
-		Id:        user.Id,
-		Group:     user.Group,
-		Quota:     user.Quota,
-		Status:    user.Status,
-		Username:  user.Username,
-		Setting:   user.Setting,
-		Email:     user.Email,
+		Id:       user.Id,
+		Group:    user.Group,
+		Quota:    user.Quota,
+		Status:   user.Status,
+		Username: user.Username,
+		Setting:  user.Setting,
+		Email:    user.Email,
 	}
 	return cache
 }
@@ -200,7 +199,7 @@ func GetUserSetting(id int, fromDB bool) (dto.UserSetting, error) {
 
 func UpdateUserUsedQuotaAndRequestCount(id int, quota int) {
 	if err := DB.Model(&User{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"used_quota": gorm.Expr("used_quota + ?", quota),
+		"used_quota":    gorm.Expr("used_quota + ?", quota),
 		"request_count": gorm.Expr("request_count + 1"),
 	}).Error; err != nil {
 		common.SysError(fmt.Sprintf("failed to update user quota for id %d: %v", id, err))
@@ -242,22 +241,22 @@ func DecrementInviterAffCount(inviterId int) error {
 func (user *User) Update(updatePassword bool) error {
 	if updatePassword {
 		return DB.Model(user).Updates(map[string]interface{}{
-			"password":      user.Password,
-			"phone":         user.Phone,
-			"display_name":  user.DisplayName,
-			"email":         user.Email,
-			"wechat_id":     user.WeChatId,
-			"setting":       user.Setting,
-			"remark":        user.Remark,
+			"password":     user.Password,
+			"phone":        user.Phone,
+			"display_name": user.DisplayName,
+			"email":        user.Email,
+			"wechat_id":    user.WeChatId,
+			"setting":      user.Setting,
+			"remark":       user.Remark,
 		}).Error
 	}
 	return DB.Model(user).Updates(map[string]interface{}{
-		"phone":         user.Phone,
-		"display_name":  user.DisplayName,
-		"email":         user.Email,
-		"wechat_id":     user.WeChatId,
-		"setting":       user.Setting,
-		"remark":        user.Remark,
+		"phone":        user.Phone,
+		"display_name": user.DisplayName,
+		"email":        user.Email,
+		"wechat_id":    user.WeChatId,
+		"setting":      user.Setting,
+		"remark":       user.Remark,
 	}).Error
 }
 
@@ -356,7 +355,7 @@ func getCurrentTimeMillis() int64 {
 
 // IncreaseUserQuota increases user's quota by delta
 func IncreaseUserQuota(id int, delta int, force bool) error {
-    return DB.Model(&User{}).Where("id = ?", id).Update("quota", gorm.Expr("quota + ?", delta)).Error
+	return DB.Model(&User{}).Where("id = ?", id).Update("quota", gorm.Expr("quota + ?", delta)).Error
 }
 
 // ========== Pagination and search helpers ==========

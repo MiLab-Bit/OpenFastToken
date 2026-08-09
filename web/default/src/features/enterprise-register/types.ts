@@ -29,7 +29,6 @@ export const enterpriseRegisterFormSchema = z.object({
   contact_phone: z.string().max(30, '联系电话不能超过30个字符').optional().or(z.literal('')),
   contact_email: z.string().email('请输入有效的邮箱地址').max(100, '联系人邮箱不能超过100个字符').optional().or(z.literal('')),
   business_license: z.string().optional(), // 营业执照文件 URL
-  invitation_code: z.string().min(1, '请输入企业认证邀请码'),
 })
 
 export type EnterpriseRegisterFormValues = z.infer<typeof enterpriseRegisterFormSchema>
@@ -51,5 +50,4 @@ export interface EnterpriseRegisterPayload {
   contact_phone?: string
   contact_email?: string
   business_license?: string
-  invitation_code?: string
 }

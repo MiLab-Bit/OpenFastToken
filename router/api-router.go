@@ -210,10 +210,10 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.POST("/topup/complete", middleware.AdminAuth(), controller.AdminCompleteTopUp)
 		// Admin topup refund (requires admin auth)
 		apiRouter.POST("/topup/refund", middleware.AdminAuth(), controller.AdminRefundTopUp)
-		
+
 		// 配置即数据：公开运行时端点（前端本地化合并 / 充值赠送展示）
 		apiRouter.GET("/i18n/messages", controller.GetI18nMessages)
-	apiRouter.GET("/ui/skins", controller.GetUiSkins)
+		apiRouter.GET("/ui/skins", controller.GetUiSkins)
 		apiRouter.POST("/topup/gift-bonus", controller.GetTopupGiftBonus)
 
 		// Redemption routes (admin only)
@@ -254,8 +254,6 @@ func SetApiRouter(router *gin.Engine) {
 			userPaymentRoute.GET("/topup/self", controller.GetUserTopUps)
 			userPaymentRoute.GET("/wechat/query", controller.QueryWechatOrder)
 			userPaymentRoute.GET("/alipay/query", controller.QueryAlipayOrder)
-			// Invitation code redemption
-			userPaymentRoute.POST("/use_invitation_code", controller.UserUseInvitationCode)
 			userPaymentRoute.GET("/aff", controller.GetAffCode)
 			userPaymentRoute.POST("/aff_transfer", controller.TransferAffQuota)
 		}
@@ -493,13 +491,6 @@ func SetApiRouter(router *gin.Engine) {
 		prefillGroupRoute.PUT("/", controller.UpdatePrefillGroup)
 		prefillGroupRoute.DELETE("/:id", controller.DeletePrefillGroup)
 	}
-
-	// ==================== Invitation Codes (admin) ====================
-	apiRouter.GET("/user/invitation_codes", middleware.AdminAuth(), controller.AdminListInvitationCodes)
-	apiRouter.GET("/user/invitation_code/stats", middleware.AdminAuth(), controller.AdminGetInvitationCodeStats)
-
-	apiRouter.POST("/user/invitation_code", middleware.AdminAuth(), controller.AdminCreateInvitationCode)
-	apiRouter.DELETE("/user/invitation_code/:id", middleware.AdminAuth(), controller.AdminDeleteInvitationCode)
 
 	// ==================== Tasks ====================
 	apiRouter.GET("/task", middleware.UserAuth(), controller.GetUserTask)

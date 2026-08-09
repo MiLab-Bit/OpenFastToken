@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"www.abc-ai.cn/FastToken/i18n"
 	"net/http"
 	"strconv"
+	"www.abc-ai.cn/FastToken/i18n"
 
 	"www.abc-ai.cn/FastToken/model"
 
@@ -70,6 +70,26 @@ func EnterpriseCreateUser(c *gin.Context) {
 	if req.Role == "" {
 		req.Role = "member"
 	}
+
+	// 一人一企业：已属于其他企业的用户不可重复加入
+	if existingEntId := model.GetUserEnterpriseId(req.UserId); existingEntId != 0 && existingEntId != enterpriseId {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": i18n.Msg(c, "该用户已属于其他企业，无法重复加入"),
+		})
+		return
+	}
+
+	// 子账号严格继承企业会员等级（而非邀请码等级）
+	enterprise, entErr := model.GetEnterpriseById(enterpriseId)
+	if entErr != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": i18n.Msg(c, "企业不存在: ") + entErr.Error(),
+		})
+		return
+	}
+
 	eu := &model.EnterpriseUser{
 		EnterpriseId: enterpriseId,
 		UserId:       req.UserId,
@@ -85,6 +105,20 @@ func EnterpriseCreateUser(c *gin.Context) {
 		})
 		return
 	}
+
+	// 写入继承：企业 ID + 企业会员等级；过期时间清零（跟随企业等级）
+	if upErr := model.DB.Model(&model.User{}).Where("id = ?", req.UserId).Updates(map[string]interface{}{
+		"enterprise_id":     enterpriseId,
+		"membership_level":  enterprise.MembershipLevel,
+		"membership_expire": 0,
+	}).Error; upErr != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": i18n.Msg(c, "继承企业等级失败: ") + upErr.Error(),
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    eu,
@@ -179,6 +213,16 @@ func EnterpriseDeleteUser(c *gin.Context) {
 		})
 		return
 	}
+
+	// 保护企业所有者：所有者不可被移除
+	if enterprise, entErr := model.GetEnterpriseById(enterpriseId); entErr == nil && enterprise.UserId == userId {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": i18n.Msg(c, "企业所有者不可被移除"),
+		})
+		return
+	}
+
 	if err := model.RemoveUserFromEnterprise(enterpriseId, userId); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -186,6 +230,22 @@ func EnterpriseDeleteUser(c *gin.Context) {
 		})
 		return
 	}
+
+	// 该用户若正以本企业身份继承等级，则清除继承（回到默认 silver）
+	if curEntId := model.GetUserEnterpriseId(userId); curEntId == enterpriseId {
+		if upErr := model.DB.Model(&model.User{}).Where("id = ?", userId).Updates(map[string]interface{}{
+			"enterprise_id":     0,
+			"membership_level":  "silver",
+			"membership_expire": 0,
+		}).Error; upErr != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": i18n.Msg(c, "清除继承等级失败: ") + upErr.Error(),
+			})
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": i18n.Msg(c, "移除成功"),

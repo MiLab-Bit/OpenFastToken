@@ -54,6 +54,10 @@ export function useSidebarData(): SidebarData {
     ? [{ title: t('Tenant Console'), url: '/tenant', icon: Briefcase }]
     : []
 
+  const enterpriseWalletItems: NavItem[] = user?.enterprise_id
+    ? [{ title: t('Enterprise Wallet'), url: '/enterprise-wallet', icon: Building2 }]
+    : []
+
   return {
     navGroups: [
       {
@@ -114,6 +118,7 @@ export function useSidebarData(): SidebarData {
             url: '/wallet',
             icon: Wallet,
           },
+          ...enterpriseWalletItems,
           {
             title: t('Membership'),
             url: '/membership',

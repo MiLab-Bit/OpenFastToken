@@ -58,6 +58,7 @@ import { Route as AuthenticatedKeysIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedGroupRatiosIndexRouteImport } from './routes/_authenticated/group-ratios/index'
 import { Route as AuthenticatedGiftsAdminIndexRouteImport } from './routes/_authenticated/gifts-admin/index'
 import { Route as AuthenticatedEnterprisesIndexRouteImport } from './routes/_authenticated/enterprises/index'
+import { Route as AuthenticatedEnterpriseWalletIndexRouteImport } from './routes/_authenticated/enterprise-wallet/index'
 import { Route as AuthenticatedEnterpriseRegisterIndexRouteImport } from './routes/_authenticated/enterprise-register/index'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard/index'
 import { Route as AuthenticatedChannelsIndexRouteImport } from './routes/_authenticated/channels/index'
@@ -344,6 +345,12 @@ const AuthenticatedEnterprisesIndexRoute =
     path: '/enterprises/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEnterpriseWalletIndexRoute =
+  AuthenticatedEnterpriseWalletIndexRouteImport.update({
+    id: '/enterprise-wallet/',
+    path: '/enterprise-wallet/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEnterpriseRegisterIndexRoute =
   AuthenticatedEnterpriseRegisterIndexRouteImport.update({
     id: '/enterprise-register/',
@@ -524,6 +531,7 @@ export interface FileRoutesByFullPath {
   '/channels/': typeof AuthenticatedChannelsIndexRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/enterprise-register/': typeof AuthenticatedEnterpriseRegisterIndexRoute
+  '/enterprise-wallet/': typeof AuthenticatedEnterpriseWalletIndexRoute
   '/enterprises/': typeof AuthenticatedEnterprisesIndexRoute
   '/gifts-admin/': typeof AuthenticatedGiftsAdminIndexRoute
   '/group-ratios/': typeof AuthenticatedGroupRatiosIndexRoute
@@ -596,6 +604,7 @@ export interface FileRoutesByTo {
   '/channels': typeof AuthenticatedChannelsIndexRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/enterprise-register': typeof AuthenticatedEnterpriseRegisterIndexRoute
+  '/enterprise-wallet': typeof AuthenticatedEnterpriseWalletIndexRoute
   '/enterprises': typeof AuthenticatedEnterprisesIndexRoute
   '/gifts-admin': typeof AuthenticatedGiftsAdminIndexRoute
   '/group-ratios': typeof AuthenticatedGroupRatiosIndexRoute
@@ -672,6 +681,7 @@ export interface FileRoutesById {
   '/_authenticated/channels/': typeof AuthenticatedChannelsIndexRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/enterprise-register/': typeof AuthenticatedEnterpriseRegisterIndexRoute
+  '/_authenticated/enterprise-wallet/': typeof AuthenticatedEnterpriseWalletIndexRoute
   '/_authenticated/enterprises/': typeof AuthenticatedEnterprisesIndexRoute
   '/_authenticated/gifts-admin/': typeof AuthenticatedGiftsAdminIndexRoute
   '/_authenticated/group-ratios/': typeof AuthenticatedGroupRatiosIndexRoute
@@ -747,6 +757,7 @@ export interface FileRouteTypes {
     | '/channels/'
     | '/dashboard/'
     | '/enterprise-register/'
+    | '/enterprise-wallet/'
     | '/enterprises/'
     | '/gifts-admin/'
     | '/group-ratios/'
@@ -819,6 +830,7 @@ export interface FileRouteTypes {
     | '/channels'
     | '/dashboard'
     | '/enterprise-register'
+    | '/enterprise-wallet'
     | '/enterprises'
     | '/gifts-admin'
     | '/group-ratios'
@@ -894,6 +906,7 @@ export interface FileRouteTypes {
     | '/_authenticated/channels/'
     | '/_authenticated/dashboard/'
     | '/_authenticated/enterprise-register/'
+    | '/_authenticated/enterprise-wallet/'
     | '/_authenticated/enterprises/'
     | '/_authenticated/gifts-admin/'
     | '/_authenticated/group-ratios/'
@@ -1300,6 +1313,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEnterprisesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/enterprise-wallet/': {
+      id: '/_authenticated/enterprise-wallet/'
+      path: '/enterprise-wallet'
+      fullPath: '/enterprise-wallet/'
+      preLoaderRoute: typeof AuthenticatedEnterpriseWalletIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/enterprise-register/': {
       id: '/_authenticated/enterprise-register/'
       path: '/enterprise-register'
@@ -1565,6 +1585,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChannelsIndexRoute: typeof AuthenticatedChannelsIndexRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedEnterpriseRegisterIndexRoute: typeof AuthenticatedEnterpriseRegisterIndexRoute
+  AuthenticatedEnterpriseWalletIndexRoute: typeof AuthenticatedEnterpriseWalletIndexRoute
   AuthenticatedEnterprisesIndexRoute: typeof AuthenticatedEnterprisesIndexRoute
   AuthenticatedGiftsAdminIndexRoute: typeof AuthenticatedGiftsAdminIndexRoute
   AuthenticatedGroupRatiosIndexRoute: typeof AuthenticatedGroupRatiosIndexRoute
@@ -1599,6 +1620,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   AuthenticatedEnterpriseRegisterIndexRoute:
     AuthenticatedEnterpriseRegisterIndexRoute,
+  AuthenticatedEnterpriseWalletIndexRoute:
+    AuthenticatedEnterpriseWalletIndexRoute,
   AuthenticatedEnterprisesIndexRoute: AuthenticatedEnterprisesIndexRoute,
   AuthenticatedGiftsAdminIndexRoute: AuthenticatedGiftsAdminIndexRoute,
   AuthenticatedGroupRatiosIndexRoute: AuthenticatedGroupRatiosIndexRoute,
