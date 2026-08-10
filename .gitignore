@@ -1,6 +1,7 @@
 # ============ 二进制与构建产物 ============
 /fasttoken
 /fasttoken.bak.*
+/fasttoken.rollback
 /fasttoken_linux
 /ft.new
 *.exe

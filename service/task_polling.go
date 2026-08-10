@@ -342,9 +342,9 @@ func updateVideoTasks(ctx context.Context, platform constant.TaskPlatform, chann
 }
 
 func updateVideoSingleTask(ctx context.Context, adaptor TaskPollingAdaptor, ch *model.Channel, taskId string, taskM map[string]*model.Task) error {
-	baseURL := constant.ChannelBaseURLs[ch.Type]
-	if ch.GetBaseURL() != "" {
-		baseURL = ch.GetBaseURL()
+	baseURL := ch.GetBaseURL()
+	if baseURL == "" && ch.Type < len(constant.ChannelBaseURLs) {
+		baseURL = constant.ChannelBaseURLs[ch.Type]
 	}
 	proxy := ch.GetSetting().Proxy
 

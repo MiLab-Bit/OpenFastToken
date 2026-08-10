@@ -61,8 +61,8 @@ type Task struct {
 	Properties Properties            `json:"properties" gorm:"type:json"`
 	Username   string                `json:"username,omitempty" gorm:"-"`
 	// 禁止返回给用户，内部可能包含key等隐私信息
-	PrivateData TaskPrivateData `json:"-" gorm:"column:private_data;type:json"`
-	Data        json.RawMessage `json:"data" gorm:"type:json"`
+	PrivateData TaskPrivateData `json:"-" gorm:"column:private_data;type:json;serializer:json"`
+	Data        json.RawMessage `json:"data" gorm:"type:json;serializer:json"`
 }
 
 func (t *Task) SetData(data any) {
@@ -93,7 +93,11 @@ func (m Properties) Value() (driver.Value, error) {
 	if m == (Properties{}) {
 		return nil, nil
 	}
-	return common.Marshal(m)
+	b, err := common.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	return string(b), nil
 }
 
 type TaskPrivateData struct {
