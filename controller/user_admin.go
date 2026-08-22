@@ -427,7 +427,12 @@ func EmailBind(c *gin.Context) {
 	}
 	session := sessions.Default(c)
 	id := session.Get("id")
-	user, err := userRepo().GetByID(id.(int), false)
+	userID, ok := id.(int)
+	if !ok {
+		common.ApiError(c, errors.New("invalid session"))
+		return
+	}
+	user, err := userRepo().GetByID(userID, false)
 	if err != nil {
 		common.ApiError(c, err)
 		return

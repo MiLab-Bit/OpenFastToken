@@ -190,7 +190,12 @@ func handleOAuthBind(c *gin.Context, provider oauth.Provider) {
 	// Get current user from session
 	session := sessions.Default(c)
 	id := session.Get("id")
-	user := model.User{Id: id.(int)}
+	userID, ok := id.(int)
+	if !ok {
+		common.ApiError(c, fmt.Errorf("invalid session"))
+		return
+	}
+	user := model.User{Id: userID}
 	err = user.FillUserById()
 	if err != nil {
 		common.ApiError(c, err)
