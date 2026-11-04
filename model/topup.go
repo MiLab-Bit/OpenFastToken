@@ -604,7 +604,7 @@ func RevokeAffiliateRebate(tradeNo string) error {
 			return err
 		}
 		// 同步递减邀请人数，修复 aff_count 只增不减的缺陷
-		if err := DecrementInviterAffCount(log.InviterId); err != nil {
+		if err := decrementInviterAffCountInTx(tx, log.InviterId); err != nil {
 			return err
 		}
 		// 若当时给了被推荐人双边奖励，也一并回退
