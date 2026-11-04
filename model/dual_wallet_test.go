@@ -33,7 +33,7 @@ func setupDualWalletTestDB(t *testing.T) *gorm.DB {
 		common.QuotaPerUnit = origQuotaPerUnit
 		DB, LOG_DB = origDB, origLogDB
 	})
-	if err := db.AutoMigrate(&User{}, &TopUp{}, &Enterprise{}, &EnterpriseUser{}, &EnterpriseWallet{}, &EnterpriseWalletTxn{}, &Log{}); err != nil {
+	if err := db.AutoMigrate(&User{}, &TopUp{}, &Enterprise{}, &EnterpriseUser{}, &EnterpriseWallet{}, &EnterpriseWalletTxn{}, &AffiliateLog{}, &Log{}); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
 	return db
@@ -337,6 +337,15 @@ func TestEnterpriseRefundRouting(t *testing.T) {
 	tu := GetTopUpByTradeNo("WEP_refund_1")
 	if tu == nil || tu.Status != common.TopUpStatusRefunded {
 		t.Fatalf("expect topup refunded, got %+v", tu)
+	}
+	// Enterprise top-ups do not generate referral rebates. The refund path
+	// nevertheless queries AffiliateLog, so the fixture must include that table.
+	var rebateCount int64
+	if err := DB.Model(&AffiliateLog{}).Where("trade_no = ?", "WEP_refund_1").Count(&rebateCount).Error; err != nil {
+		t.Fatalf("check referral rebate after enterprise refund: %v", err)
+	}
+	if rebateCount != 0 {
+		t.Fatalf("enterprise refund unexpectedly retained %d referral rebates", rebateCount)
 	}
 }
 
