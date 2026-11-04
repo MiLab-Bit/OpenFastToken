@@ -376,3 +376,80 @@ func TestCrossTenantGrantBlocked(t *testing.T) {
 		t.Fatalf("balance must stay 1000, got %d", w1c.Balance)
 	}
 }
+
+
+// TestRefundReferralReversalIsIdempotent exercises the personal-refund path with
+// a seeded affiliate rebate. The existing enterprise-only fixture test cannot
+// establish that a real rebate is correctly reversed.
+func TestRefundReferralReversalIsIdempotent(t *testing.T) {
+	setupDualWalletTestDB(t)
+
+	inviter := &User{
+		Username: "referral_inviter",
+		AffCount: 1,
+		AffQuota: 30,
+		AffHistoryQuota: 30,
+		AffRechargeTotal: 80,
+	}
+	if err := DB.Create(inviter).Error; err != nil {
+		t.Fatal(err)
+	}
+	buyer := &User{Username: "referral_buyer", Quota: 120, AffQuota: 15, InviterId: inviter.Id}
+	if err := DB.Create(buyer).Error; err != nil {
+		t.Fatal(err)
+	}
+	order := &TopUp{
+		UserId: buyer.Id, Amount: 120, Money: 80, TradeNo: "referral_refund_case",
+		PaymentMethod: PaymentMethodAlipay, PaymentProvider: PaymentProviderAlipay,
+		Status: common.TopUpStatusSuccess, CreateTime: 1,
+		WalletType: WalletTypeWallet,
+	}
+	if err := DB.Create(order).Error; err != nil {
+		t.Fatal(err)
+	}
+	rebate := &AffiliateLog{
+		InviterId: inviter.Id, RefereeId: buyer.Id, TradeNo: order.TradeNo,
+		RechargeAmount: 80, RebateQuota: 30, RefereeQuota: 15, CreatedAt: 1,
+	}
+	if err := DB.Create(rebate).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	if err := RefundTopUp(order.TradeNo, "test"); err != nil {
+		t.Fatalf("refund personal topup: %v", err)
+	}
+	var afterBuyer, afterInviter User
+	if err := DB.First(&afterBuyer, buyer.Id).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := DB.First(&afterInviter, inviter.Id).Error; err != nil {
+		t.Fatal(err)
+	}
+	var remaining int64
+	if err := DB.Model(&AffiliateLog{}).Where("trade_no = ?", order.TradeNo).Count(&remaining).Error; err != nil {
+		t.Fatal(err)
+	}
+	if remaining != 0 ||
+		afterBuyer.Quota != 0 || afterBuyer.AffQuota != 0 ||
+		afterInviter.AffQuota != 0 || afterInviter.AffHistoryQuota != 0 ||
+		afterInviter.AffRechargeTotal != 0 {
+		t.Fatalf("refund/rebate state inconsistent: remaining=%d buyer=(%d,%d) inviter=(%d,%d,%d)",
+			remaining, afterBuyer.Quota, afterBuyer.AffQuota,
+			afterInviter.AffQuota, afterInviter.AffHistoryQuota, afterInviter.AffRechargeTotal)
+	}
+	if err := RefundTopUp(order.TradeNo, "test"); err != nil {
+		t.Fatalf("repeat refund: %v", err)
+	}
+	var finalBuyer, finalInviter User
+	if err := DB.First(&finalBuyer, buyer.Id).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := DB.First(&finalInviter, inviter.Id).Error; err != nil {
+		t.Fatal(err)
+	}
+	if finalBuyer.Quota != afterBuyer.Quota || finalBuyer.AffQuota != afterBuyer.AffQuota ||
+		finalInviter.AffQuota != afterInviter.AffQuota ||
+		finalInviter.AffHistoryQuota != afterInviter.AffHistoryQuota {
+		t.Fatal("repeat refund changed balances")
+	}
+}
