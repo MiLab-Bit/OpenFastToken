@@ -2,6 +2,7 @@ package model
 
 import (
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/MiLab-Bit/OpenFastToken/common"
@@ -88,5 +89,54 @@ func TestRefundReferralReversalPostgres(t *testing.T) {
 	}
 	if err := RefundTopUp(order.TradeNo, "ci-postgres"); err != nil {
 		t.Fatalf("repeat refund must be idempotent: %v", err)
+	}
+
+	// Two simultaneous refund attempts must not reverse principal or rebate
+	// twice. The row lock serializes the order's status transition.
+	anotherInviter := &User{Username: "postgres_concurrent_inviter",
+		AffCount: 1, AffQuota: 30, AffHistoryQuota: 30, AffRechargeTotal: 80}
+	if err := db.Create(anotherInviter).Error; err != nil { t.Fatal(err) }
+	anotherBuyer := &User{Username: "postgres_concurrent_buyer",
+		Quota: 120, AffQuota: 15, InviterId: anotherInviter.Id}
+	if err := db.Create(anotherBuyer).Error; err != nil { t.Fatal(err) }
+	concurrentOrder := &TopUp{
+		UserId: anotherBuyer.Id, Amount: 120, Money: 80,
+		TradeNo: "pg_concurrent_refund", PaymentMethod: PaymentMethodAlipay,
+		PaymentProvider: PaymentProviderAlipay, Status: common.TopUpStatusSuccess,
+		CreateTime: 1, WalletType: WalletTypeWallet,
+	}
+	if err := db.Create(concurrentOrder).Error; err != nil { t.Fatal(err) }
+	if err := db.Create(&AffiliateLog{
+		InviterId: anotherInviter.Id, RefereeId: anotherBuyer.Id,
+		TradeNo: concurrentOrder.TradeNo, RechargeAmount: 80,
+		RebateQuota: 30, RefereeQuota: 15, CreatedAt: 1,
+	}).Error; err != nil { t.Fatal(err) }
+	var wg sync.WaitGroup
+	results := make(chan error, 2)
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			results <- RefundTopUp(concurrentOrder.TradeNo, "ci-concurrent")
+		}()
+	}
+	wg.Wait()
+	close(results)
+	for result := range results {
+		if result != nil { t.Fatalf("concurrent refund failed: %v", result) }
+	}
+	var concurrentBuyer, concurrentInviter User
+	var completedOrder TopUp
+	if err := db.First(&concurrentBuyer, anotherBuyer.Id).Error; err != nil { t.Fatal(err) }
+	if err := db.First(&concurrentInviter, anotherInviter.Id).Error; err != nil { t.Fatal(err) }
+	if err := db.First(&completedOrder, concurrentOrder.Id).Error; err != nil { t.Fatal(err) }
+	if completedOrder.Status != common.TopUpStatusRefunded ||
+		concurrentBuyer.Quota != 0 || concurrentBuyer.AffQuota != 0 ||
+		concurrentInviter.AffCount != 0 || concurrentInviter.AffQuota != 0 ||
+		concurrentInviter.AffHistoryQuota != 0 || concurrentInviter.AffRechargeTotal != 0 {
+		t.Fatalf("concurrent refund left inconsistent state: status=%v buyer=(%d,%d) inviter=(%d,%d,%d,%d)",
+			completedOrder.Status, concurrentBuyer.Quota, concurrentBuyer.AffQuota,
+			concurrentInviter.AffCount, concurrentInviter.AffQuota,
+			concurrentInviter.AffHistoryQuota, concurrentInviter.AffRechargeTotal)
 	}
 }
