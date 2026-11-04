@@ -55,36 +55,7 @@ jobs:
           GOTOOLCHAIN: auto
         run: |
           set -euo pipefail
-          go test ./controller -run '^(TestAlipayNotify_OfflineReturnsFail|TestWechatNotify_OfflineReturnsFail)    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: wallet_test
-          POSTGRES_PASSWORD: ci-only-not-production
-          POSTGRES_DB: wallet_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U wallet_test -d wallet_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-      - name: Execute refund/rebate transaction contract against PostgreSQL
-        env:
-          TEST_POSTGRES_DSN: "host=127.0.0.1 port=5432 user=wallet_test password=ci-only-not-production dbname=wallet_test sslmode=disable"
-          GOTOOLCHAIN: auto
-        run: |
-          set -euo pipefail
-          go test ./model -run '^TestRefundReferralReversalPostgres$' -count=1 -timeout=3m -v
- -count=1 -timeout=5m -v
+          go test ./controller -run '^(TestAlipayNotify_OfflineReturnsFail|TestWechatNotify_OfflineReturnsFail)$' -count=1 -timeout=5m -v
 
   wallet-postgres:
     runs-on: ubuntu-latest
