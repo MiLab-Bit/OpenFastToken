@@ -32,13 +32,13 @@ jobs:
           cache: true
       - name: Print Go toolchain
         run: go version
-      - name: Execute 15 wallet and refund contract tests (uncached)
+      - name: Execute 16 wallet and refund contract tests (uncached)
         env:
           GOTOOLCHAIN: auto
         run: |
           set -euo pipefail
           go test ./model ./service \
-            -run '^(TestEnterpriseWalletRechargeAndGrant|TestGrantInsufficientBalance|TestConsumeEUQuotaNoNegative|TestRefundEUQuota|TestEnterpriseTopUpCallbackRouting|TestPersonalTopUpCallbackUnchanged|TestEnterpriseRefundRouting|TestCrossTenantGrantBlocked|TestCompositeFundingEnterprisePriority|TestCompositeFundingFallbackPersonal|TestCompositeFundingPureEnterpriseUser|TestCompositeFundingRefundOriginalPath|TestCompositeFundingNoEnterpriseUser|TestCompositeFundingReserveRollback|TestRefundReferralReversalIsIdempotent)$' \
+            -run '^(TestEnterpriseWalletRechargeAndGrant|TestGrantInsufficientBalance|TestConsumeEUQuotaNoNegative|TestRefundEUQuota|TestEnterpriseTopUpCallbackRouting|TestPersonalTopUpCallbackUnchanged|TestEnterpriseRefundRouting|TestCrossTenantGrantBlocked|TestCompositeFundingEnterprisePriority|TestCompositeFundingFallbackPersonal|TestCompositeFundingPureEnterpriseUser|TestCompositeFundingRefundOriginalPath|TestCompositeFundingNoEnterpriseUser|TestCompositeFundingReserveRollback|TestRefundReferralReversalIsIdempotent|TestRefundReferralFailureRollsBackPrincipal)$' \
             -count=1 -timeout=5m -v
 
   wallet-postgres:
