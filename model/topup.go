@@ -10,6 +10,7 @@ import (
 
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type TopUp struct {
@@ -647,7 +648,11 @@ func RefundTopUp(tradeNo string, callerIp string) error {
 
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		topUp := &TopUp{}
-		if err := tx.Set("gorm:query_option", "FOR UPDATE").Where(refCol+" = ?", tradeNo).First(topUp).Error; err != nil {
+		query := tx.Where(refCol+" = ?", tradeNo)
+		if !common.UsingSQLite {
+			query = query.Clauses(clause.Locking{Strength: "UPDATE"})
+		}
+		if err := query.First(topUp).Error; err != nil {
 			return errors.New("充值订单不存在")
 		}
 		if topUp.Status == common.TopUpStatusRefunded {
