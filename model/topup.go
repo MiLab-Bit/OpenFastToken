@@ -579,19 +579,24 @@ func ProcessReferralRebate(topUp *TopUp, callerIp string) error {
 //
 // 幂等：若对应返利记录已不存在，直接返回 nil，可安全重试。
 func RevokeAffiliateRebate(tradeNo string) error {
+    return DB.Transaction(func(tx *gorm.DB) error {
+        return revokeAffiliateRebateInTx(tx, tradeNo)
+    })
+}
+
+func revokeAffiliateRebateInTx(tx *gorm.DB, tradeNo string) error {
 	if tradeNo == "" {
 		return errors.New("未提供支付单号")
 	}
 
 	var log AffiliateLog
-	if err := DB.Where("trade_no = ?", tradeNo).First(&log).Error; err != nil {
+	if err := tx.Where("trade_no = ?", tradeNo).First(&log).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil // 无返利记录，视为已冲销
 		}
 		return err
 	}
 
-	return DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Delete(&log).Error; err != nil {
 			return err
 		}
@@ -615,7 +620,6 @@ func RevokeAffiliateRebate(tradeNo string) error {
 			}
 		}
 		return nil
-	})
 }
 
 // RefundTopUp 管理员退款：反向冲销一笔已成功充值订单的主配额（本金+赠送已折入 Amount）与推荐返利，并标记订单为已退款。
@@ -647,7 +651,7 @@ func RefundTopUp(tradeNo string, callerIp string) error {
 			return errors.New("充值订单不存在")
 		}
 		if topUp.Status == common.TopUpStatusRefunded {
-			return nil // 幂等：已退款
+			return revokeAffiliateRebateInTx(tx, tradeNo) // also heal legacy partial reversal
 		}
 		if topUp.Status != common.TopUpStatusSuccess {
 			return errors.New("仅成功订单可退款")
@@ -687,15 +691,10 @@ func RefundTopUp(tradeNo string, callerIp string) error {
 		userId = topUp.UserId
 		payMoney = topUp.Money
 		paymentMethod = topUp.PaymentMethod
-		return nil
+		return revokeAffiliateRebateInTx(tx, tradeNo)
 	})
 	if err != nil {
 		return err
-	}
-
-	// 事务外冲销推荐返利（幂等，失败不影响主流程）
-	if err := RevokeAffiliateRebate(tradeNo); err != nil {
-		common.SysError("failed to revoke affiliate rebate on refund: " + err.Error())
 	}
 
 	if quotaToReverse > 0 {
