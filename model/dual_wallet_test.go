@@ -453,3 +453,44 @@ func TestRefundReferralReversalIsIdempotent(t *testing.T) {
 		t.Fatal("repeat refund changed balances")
 	}
 }
+
+
+// A failed affiliate reversal must roll back the principal and order status.
+// The legacy implementation committed those before attempting reversal.
+func TestRefundReferralFailureRollsBackPrincipal(t *testing.T) {
+    setupDualWalletTestDB(t)
+
+    buyer := &User{Username: "rollback_buyer", Quota: 120}
+    if err := DB.Create(buyer).Error; err != nil {
+        t.Fatal(err)
+    }
+    order := &TopUp{
+        UserId: buyer.Id, Amount: 120, Money: 80,
+        TradeNo: "rollback_affiliate_failure",
+        PaymentMethod: PaymentMethodAlipay,
+        PaymentProvider: PaymentProviderAlipay,
+        Status: common.TopUpStatusSuccess, CreateTime: 1,
+        WalletType: WalletTypeWallet,
+    }
+    if err := DB.Create(order).Error; err != nil {
+        t.Fatal(err)
+    }
+    // Simulate a persistent storage/schema error at the rebate reversal stage.
+    if err := DB.Migrator().DropTable(&AffiliateLog{}); err != nil {
+        t.Fatal(err)
+    }
+    if err := RefundTopUp(order.TradeNo, "synthetic-test"); err == nil {
+        t.Fatal("refund should fail when affiliate reversal cannot be checked")
+    }
+    var actualOrder TopUp
+    var actualBuyer User
+    if err := DB.Where("trade_no = ?", order.TradeNo).First(&actualOrder).Error; err != nil {
+        t.Fatal(err)
+    }
+    if err := DB.First(&actualBuyer, buyer.Id).Error; err != nil {
+        t.Fatal(err)
+    }
+    if actualOrder.Status != common.TopUpStatusSuccess || actualBuyer.Quota != 120 {
+        t.Fatalf("partial refund committed despite reversal failure: status=%v quota=%v", actualOrder.Status, actualBuyer.Quota)
+    }
+}
