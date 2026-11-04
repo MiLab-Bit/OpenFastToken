@@ -232,10 +232,16 @@ func (user *User) Insert(inviterId int) error {
 // 统计虚高（退款后邀请人数不减）的缺陷。
 // 使用条件表达式保证不会出现负数；inviterId<=0 时直接跳过。
 func DecrementInviterAffCount(inviterId int) error {
+	return decrementInviterAffCountInTx(DB, inviterId)
+}
+
+// decrementInviterAffCountInTx uses the transaction that owns the rebate
+// reversal, avoiding a second DB connection attempting to update the same row.
+func decrementInviterAffCountInTx(db *gorm.DB, inviterId int) error {
 	if inviterId <= 0 {
 		return nil
 	}
-	return DB.Model(&User{}).Where("id = ? AND aff_count > 0", inviterId).
+	return db.Model(&User{}).Where("id = ? AND aff_count > 0", inviterId).
 		UpdateColumn("aff_count", gorm.Expr("aff_count - ?", 1)).Error
 }
 
